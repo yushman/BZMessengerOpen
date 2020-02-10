@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/bottom_navigation_contacts"
+        android:icon="@drawable/ic_group_black_24dp"
+        android:title="@string/bottom_nav_title_contacts" />
+    <item
+        android:id="@+id/bottom_navigation_chats"
+        android:icon="@drawable/ic_chat_black_24dp"
+        android:title="@string/bottom_nav_title_chats" />
+    <item
+        android:id="@+id/bottom_navigation_settings"
+        android:icon="@drawable/ic_settings_black_24dp"
+        android:title="@string/bottom_nav_title_settings" />
+    <item
+        android:id="@+id/bottom_navigation_exit"
+        android:title="Logout" />
+</menu>

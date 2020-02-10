@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/relativeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+
+        <TextView
+            android:id="@+id/tv_contact_item_char"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:text="T"
+            android:textSize="24sp"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_contact_avatar"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/iv_contact_avatar" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_contact_avatar"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/iv_contact_avatar"
+            app:layout_constraintTop_toTopOf="@+id/iv_contact_avatar">
+
+            <TextView
+                android:id="@+id/tv_contact_item_jid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="32dp"
+                android:maxLines="1"
+                android:text="How are you doing? This is a long message that should probably wrap."
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_contact_item_contact_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rose"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_contact_item_last_online"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:text="How are you doing? This is a long message that should probably wrap."
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/iv_contact_avatar"
+            android:layout_width="@dimen/avatar_size"
+            android:layout_height="@dimen/avatar_size"
+            android:layout_marginStart="56dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:srcCompat="@tools:sample/avatars" />
+
+        <View
+            android:id="@+id/contact_online_indicator"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginStart="38dp"
+            android:background="@drawable/bg_indicator"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_contact_avatar"
+            app:layout_constraintStart_toStartOf="@+id/iv_contact_avatar"
+            tools:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/iv_picked_contact"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/bg_indicator_all"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_contact_avatar"
+            app:layout_constraintEnd_toEndOf="@+id/iv_contact_avatar"
+            app:srcCompat="@drawable/ic_check_circle_black_24dp"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/iv_is_chat_owner"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_stars_black_24dp"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/btn_contact_item_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_delete_black_24dp"
+            tools:visibility="visible" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_single_chat_chat_info"
+        android:icon="@drawable/ic_info_outline_black_24dp"
+        android:title="Chat info" />
+    <item
+        android:id="@+id/menu_single_chat_clear_history"
+        android:title="Clear history" />
+    <item
+        android:id="@+id/menu_single_chat_delete_chat"
+        android:title="Delete chat" />
+</menu>

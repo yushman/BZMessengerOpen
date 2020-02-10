@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="72dp"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/relativeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="71dp">
+
+        <TextView
+            android:id="@+id/tv_chat_item_user_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="16dp"
+            android:singleLine="true"
+            android:text="asdasd"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@+id/iv_message_delivered2"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@+id/iv_chat_avatar"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tv_chat_item_last_message"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="2dp"
+            android:ellipsize="end"
+            android:lines="2"
+            android:linksClickable="true"
+            android:maxLines="2"
+            android:minLines="2"
+            android:singleLine="false"
+            android:text="How are you doing? This is a lHow are you doing? This is a lHow are you doing? This is a lThis is a lThis is a lThis is a l"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/tv_chat_item_unread_count"
+            app:layout_constraintStart_toStartOf="@+id/tv_chat_item_user_name"
+            app:layout_constraintTop_toBottomOf="@+id/tv_chat_item_user_name" />
+
+        <TextView
+            android:id="@+id/tv_chat_item_last_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:gravity="end"
+            android:singleLine="true"
+            android:text="TextView"
+            android:textSize="10sp"
+            app:layout_constraintBottom_toBottomOf="@+id/tv_chat_item_user_name"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/tv_chat_item_user_name" />
+
+        <ImageView
+            android:id="@+id/iv_chat_avatar"
+            android:layout_width="@dimen/avatar_size"
+            android:layout_height="@dimen/avatar_size"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:srcCompat="@tools:sample/avatars" />
+
+        <TextView
+            android:id="@+id/tv_chat_item_unread_count"
+            android:layout_width="wrap_content"
+            android:layout_height="20dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_unread_messages"
+            android:gravity="center"
+            android:minWidth="20dp"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:text="11"
+            android:textColor="@android:color/white"
+            android:textSize="10sp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/tv_chat_item_last_message"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/tv_chat_item_last_message"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/iv_message_sended2"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/tv_chat_item_last_date"
+            app:layout_constraintEnd_toStartOf="@+id/tv_chat_item_last_date"
+            app:layout_constraintTop_toTopOf="@+id/tv_chat_item_last_date"
+            app:srcCompat="@drawable/ic_check_black_24dp"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/iv_message_delivered2"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="4dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_message_sended2"
+            app:layout_constraintEnd_toEndOf="@+id/iv_message_sended2"
+            app:srcCompat="@drawable/ic_check_black_24dp"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/iv_chat_item_online_indicator"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="2dp"
+            android:background="@drawable/bg_indicator"
+            android:padding="2dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_chat_avatar"
+            app:layout_constraintEnd_toEndOf="@+id/iv_chat_avatar"
+            tools:visibility="visible" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <View
+        android:id="@+id/divider11"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="76dp"
+        android:layout_marginLeft="76dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</LinearLayout>

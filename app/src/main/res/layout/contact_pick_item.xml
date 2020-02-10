@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="2dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="1dp"
+        android:layout_marginBottom="4dp"
+        android:layout_weight="1"
+        app:cardCornerRadius="4dp"
+        app:cardElevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/relativeLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/contact_avatar"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/round_avatar"
+                android:gravity="center"
+                android:textColor="@android:color/white"
+                android:textSize="36sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/iv_picked_contact"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="R" />
+
+            <TextView
+                android:id="@+id/tv_contact_item_jid"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="16dp"
+                android:elevation="2dp"
+                android:maxLines="1"
+                android:text="How are you doing? This is a long message that should probably wrap."
+                android:textSize="14dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/contact_avatar"
+                app:layout_constraintTop_toBottomOf="@+id/tv_contact_item_contact_name" />
+
+            <TextView
+                android:id="@+id/tv_contact_item_contact_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="4dp"
+                android:paddingBottom="4dp"
+                android:text="Rose"
+                app:layout_constraintStart_toEndOf="@+id/contact_avatar"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_contact_item_last_online"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="16dp"
+                android:elevation="2dp"
+                android:maxLines="1"
+                android:text="How are you doing? This is a long message that should probably wrap."
+                android:textSize="14dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/contact_avatar"
+                app:layout_constraintTop_toBottomOf="@+id/tv_contact_item_jid" />
+
+            <View
+                android:id="@+id/contact_online_indicator"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="2dp"
+                android:layout_marginBottom="2dp"
+                android:background="@drawable/bg_indicator"
+                app:layout_constraintBottom_toBottomOf="@+id/contact_avatar"
+                app:layout_constraintEnd_toEndOf="@+id/contact_avatar" />
+
+            <ImageView
+                android:id="@+id/iv_picked_contact"
+                android:layout_width="16dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@+id/contact_avatar"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/contact_avatar"
+                app:srcCompat="@drawable/ic_check_circle_black_24dp"
+                tools:visibility="visible" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+</LinearLayout>

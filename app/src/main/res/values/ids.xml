@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="fab_muc_chat" type="id" />
+    <item name="fab_single_chat" type="id" />
+</resources>
