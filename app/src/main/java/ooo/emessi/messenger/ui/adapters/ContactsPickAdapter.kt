@@ -8,15 +8,14 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.wrapped_model.ContactPickItem
+import ooo.emessi.messenger.data.model.view_item_model.contact.ContactPickViewItem
 import ooo.emessi.messenger.utils.helpers.AvatarHelper
 import ooo.emessi.messenger.utils.humanizeDiffForLastActivity
 import ooo.emessi.messenger.utils.toDate
-import ooo.emessi.messenger.xmpp.XMPPConnectionApi
 import java.util.*
 
-class ContactsPickAdapter (private val listener: (ContactPickItem) -> Unit): RecyclerView.Adapter<ContactsPickAdapter.ContactsViewHolder>(){
-    var contacts = listOf<ContactPickItem>()
+class ContactsPickAdapter (private val listener: (ContactPickViewItem) -> Unit): RecyclerView.Adapter<ContactsPickAdapter.ContactsViewHolder>(){
+    var contacts = listOf<ContactPickViewItem>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactsViewHolder {
         val v = LayoutInflater.from(parent.context).inflate(R.layout.contact_item, parent, false)
@@ -31,8 +30,8 @@ class ContactsPickAdapter (private val listener: (ContactPickItem) -> Unit): Rec
         holder.bind(contacts[position], listener)
     }
 
-    fun updateContacts(items: List<ContactPickItem>){
-        val _contacts = calculateLeftChar(items.filter { it.contact.contactJid != XMPPConnectionApi.getMyJid().asEntityBareJidIfPossible().toString() }.sortedBy { it.contact.nickName.capitalize() })
+    fun updateContacts(_contacts: List<ContactPickViewItem>){
+
         val diffCallback = object : DiffUtil.Callback(){
             override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
                 return contacts[oldItemPosition] == _contacts[newItemPosition]
@@ -56,23 +55,6 @@ class ContactsPickAdapter (private val listener: (ContactPickItem) -> Unit): Rec
         diffResult.dispatchUpdatesTo(this)
     }
 
-    private fun calculateLeftChar(contactPicks: List<ContactPickItem>): List<ContactPickItem> {
-        val contactsW = mutableListOf<ContactPickItem>()
-        if (contactPicks.isNullOrEmpty()) return emptyList()
-        if (contactPicks.size == 1) return listOf(contactPicks.first().copy(hasLeftChar = true))
-        else contactsW.add(contactPicks.first().copy(hasLeftChar = true))
-        for (i in 1 until contactPicks.size) {
-            val current = contactPicks[i]
-            val previous = contactPicks[i-1]
-            if (current.contact.nickName.first().toUpperCase() != previous.contact.nickName.first().toUpperCase()) {
-                contactsW.add(contactPicks[i].copy(hasLeftChar = true))
-            } else {
-                contactsW.add(contactPicks[i])
-            }
-        }
-        return contactsW
-    }
-
     inner class ContactsViewHolder(view: View): RecyclerView.ViewHolder(view) {
 
 //        val tvJid = view.findViewById<TextView>(R.id.tv_contact_item_contact_name)
@@ -84,27 +66,34 @@ class ContactsPickAdapter (private val listener: (ContactPickItem) -> Unit): Rec
         val ivPicked = view.findViewById<ImageView>(R.id.iv_picked_contact)
         val v = view
 
-        fun bind(contactPickW: ContactPickItem, listener: (ContactPickItem) -> Unit) {
+        fun bind(contactPickViewItem: ContactPickViewItem, listener: (ContactPickViewItem) -> Unit) {
 //            tvJid.text = contactW.contact.contactJid
-            tvName.text = contactPickW.contact.nickName
+            tvName.text = contactPickViewItem.contactViewItem.contactDto.name
             tvLastActivity.text = when {
-                contactPickW.contact.isOnline -> "Онлайн"
-                contactPickW.contact.lastVisit != null -> Date().humanizeDiffForLastActivity(contactPickW.contact.lastVisit!!.toDate())
+                contactPickViewItem.contactViewItem.contactDto.isOnline -> "Онлайн"
+                contactPickViewItem.contactViewItem.contactDto.lastActivity != null -> Date().humanizeDiffForLastActivity(
+                    contactPickViewItem.contactViewItem.contactDto.lastActivity!!.toDate()
+                )
                 else -> "Еще не заходил"
             }
 
-            if (contactPickW.isSelected) ivPicked.visibility = ImageView.VISIBLE
+            if (contactPickViewItem.isSelected) ivPicked.visibility = ImageView.VISIBLE
             else ivPicked.visibility = ImageView.GONE
-            if (contactPickW.hasLeftChar){
+            if (contactPickViewItem.contactViewItem.hasLeftChar){
                 tvLeftChar.visibility = View.VISIBLE
-                tvLeftChar.text = contactPickW.contact.nickName.first().toUpperCase().toString()
+                tvLeftChar.text = contactPickViewItem.contactViewItem.contactDto.name.first().toUpperCase().toString()
             } else {
                 tvLeftChar.visibility = View.GONE
             }
 //            if (contactW.contact.isOnline) indicator.visibility = View.VISIBLE
 //            else indicator.visibility = View.INVISIBLE
-            v.setOnClickListener { listener.invoke(contactPickW) }
-            AvatarHelper.placeRoundAvatar(avatarView, contactPickW.contact.avatar, contactPickW.contact.getShortName(), contactPickW.contact.contactJid)
+            v.setOnClickListener { listener.invoke(contactPickViewItem) }
+            AvatarHelper.placeRoundAvatar(
+                avatarView,
+                contactPickViewItem.contactViewItem.contactDto.avatar,
+                contactPickViewItem.contactViewItem.contactDto.getShortName(),
+                contactPickViewItem.contactViewItem.contactDto.contactJid
+            )
 
         }
     }

@@ -17,6 +17,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="4dp"
             android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
             android:orientation="horizontal"
             app:layout_constraintBottom_toTopOf="@+id/tv_forward_message_action"
             app:layout_constraintStart_toStartOf="parent">
@@ -47,6 +49,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="4dp"
             android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
             android:orientation="horizontal"
             app:layout_constraintBottom_toTopOf="@+id/tv_copy_message_action"
             app:layout_constraintStart_toStartOf="parent">
@@ -77,6 +81,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="4dp"
             android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
             android:orientation="horizontal"
             app:layout_constraintBottom_toTopOf="@+id/tv_delete_message_action"
             app:layout_constraintStart_toStartOf="parent">
@@ -107,6 +113,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="4dp"
             android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
             android:orientation="horizontal"
             app:layout_constraintBottom_toTopOf="@+id/tv_edit_message_action"
             app:layout_constraintStart_toStartOf="parent">
@@ -137,6 +145,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="32dp"
             android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
             android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent">

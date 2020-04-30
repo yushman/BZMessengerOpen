@@ -2,30 +2,30 @@ package ooo.emessi.messenger.data.database
 
 import androidx.lifecycle.LiveData
 import androidx.room.*
-import ooo.emessi.messenger.data.model.bz_model.chat.BZChat
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
 
 @Dao
 interface ChatDao {
 
     @Insert (onConflict = OnConflictStrategy.REPLACE)
-    fun insertChat(chat: BZChat)
+    fun insertChat(chatDto: ChatDto)
 
-    @Query("Select * from chats order by timeStamp desc")
-    fun getAllChats(): List<BZChat>
+    @Query("Select * from chats") // order by timeStamp desc
+    fun getAllChats(): List<ChatDto>
 
-    @Query("Select * from chats order by timeStamp desc, name desc")
-    fun loadAllChats(): LiveData<List<BZChat>>
-
-    @Query("Select * from chats where jid like :jid")
-    fun loadChatById(jid: String): LiveData<BZChat>
+    @Query("Select * from chats") // order by timeStamp desc
+    fun loadAllChats(): LiveData<List<ChatDto>>
 
     @Query("Select * from chats where jid like :jid")
-    fun getChatById(jid: String): BZChat?
+    fun loadChatById(jid: String): LiveData<ChatDto?>
+
+    @Query("Select * from chats where jid like :jid")
+    fun getChatById(jid: String): ChatDto?
 
     @Transaction
-    fun deleteChat(chat: BZChat){
-        deleteChatDataByJid(chat.jid)
-        deleteMessageByJid(chat.jid)
+    fun deleteChat(chatDto: ChatDto) {
+        deleteChatDataByJid(chatDto.jid)
+        deleteMessageByJid(chatDto.jid)
     }
 
     @Transaction
@@ -41,10 +41,10 @@ interface ChatDao {
     fun deleteMessageByJid(jid: String)
 
     @Insert (onConflict = OnConflictStrategy.REPLACE)
-    fun insertChats(chats: List<BZChat>)
+    fun insertChats(chatDtos: List<ChatDto>)
 
     @Update
-    fun updateChat(chat: BZChat)
+    fun updateChat(chatDto: ChatDto)
 
 
 //    @Update

@@ -1,6 +1,5 @@
 package ooo.emessi.messenger.ui.adapters
 
-import android.util.Log.d
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,16 +8,19 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.bz_model.muc_affiliation.BZMucAffiliation
+import ooo.emessi.messenger.data.model.dto_model.muc_affiliation.MucAffiliationDto
+import ooo.emessi.messenger.data.model.view_item_model.muc_affiliation.MucAffiliationViewItem
 import ooo.emessi.messenger.utils.helpers.AvatarHelper
 import org.jivesoftware.smackx.muclight.MUCLightAffiliation
 
-class MucAffiliationsAdapter(private val listener: (BZMucAffiliation, View) -> Unit): RecyclerView.Adapter<MucAffiliationsAdapter.AffiliationsViewHolder>(){
-    var affiliations = listOf<BZMucAffiliation>()
+class MucAffiliationsAdapter(private val listener: (MucAffiliationDto, View) -> Unit) :
+    RecyclerView.Adapter<MucAffiliationsAdapter.AffiliationsViewHolder>() {
+    var affiliations = listOf<MucAffiliationViewItem>()
     var isMeOwner = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AffiliationsViewHolder {
-        val v = LayoutInflater.from(parent.context).inflate(R.layout.affiliations_item, parent, false)
+        val v =
+            LayoutInflater.from(parent.context).inflate(R.layout.affiliations_item, parent, false)
         return AffiliationsViewHolder(v)
     }
 
@@ -30,16 +32,15 @@ class MucAffiliationsAdapter(private val listener: (BZMucAffiliation, View) -> U
         holder.bind(affiliations[position], listener)
     }
 
-    fun updateOwner(_isMeOwner: Boolean){
+    fun updateOwner(_isMeOwner: Boolean) {
         isMeOwner = _isMeOwner
-        notifyDataSetChanged()
+//        notifyDataSetChanged()
     }
 
-    fun updateAffiliations(items: List<BZMucAffiliation>){
-        val _affiliations = items.filter { it.affiliationType != MUCLightAffiliation.none }.sortedBy { it.affiliationJid.toString().capitalize() }
-        val diffCallback = object : DiffUtil.Callback(){
+    fun updateAffiliations(list: List<MucAffiliationViewItem>) {
+        val diffCallback = object : DiffUtil.Callback() {
             override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                return affiliations[oldItemPosition] == _affiliations[newItemPosition]
+                return affiliations[oldItemPosition] == list[newItemPosition]
             }
 
             override fun getOldListSize(): Int {
@@ -47,19 +48,19 @@ class MucAffiliationsAdapter(private val listener: (BZMucAffiliation, View) -> U
             }
 
             override fun getNewListSize(): Int {
-                return _affiliations.size
+                return list.size
             }
 
             override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                return affiliations[oldItemPosition].hashCode() == _affiliations[newItemPosition].hashCode()
+                return affiliations[oldItemPosition].hashCode() == list[newItemPosition].hashCode()
             }
         }
         val diffResult = DiffUtil.calculateDiff(diffCallback)
-        affiliations = _affiliations
+        affiliations = list
         diffResult.dispatchUpdatesTo(this)
     }
 
-    inner class AffiliationsViewHolder(view: View): RecyclerView.ViewHolder(view) {
+    inner class AffiliationsViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
         val tvJid = view.findViewById<TextView>(R.id.tv_contact_item_jid)
         val tvName = view.findViewById<TextView>(R.id.tv_contact_item_contact_name)
@@ -69,32 +70,49 @@ class MucAffiliationsAdapter(private val listener: (BZMucAffiliation, View) -> U
         val btnDelete = view.findViewById<ImageView>(R.id.btn_contact_item_delete)
         val v = view
 
-        fun bind(affiliation: BZMucAffiliation, listener: (BZMucAffiliation, View) -> Unit) {
+        fun bind(
+            affiliationViewItem: MucAffiliationViewItem,
+            listener: (MucAffiliationDto, View) -> Unit
+        ) {
 //            tvJid.text = affiliation.affiliationJid.toString()
 
-            tvName.text = affiliation.affiliationContact.nickName
-            d("AFFILIATIONS", isMeOwner.toString())
-            tvLastActivity.text = affiliation.affiliationContact.getLastActivity()
+            tvName.text = affiliationViewItem.contact?.name
+                ?: affiliationViewItem.affiliation.affiliationJid.asEntityBareJidIfPossible()
+                    .asEntityBareJidString()
+            tvLastActivity.text = affiliationViewItem.contact?.getLastActivityInfo()
 
 //            if (affiliation.affiliationContact!!.isOnline) indicator.visibility = View.VISIBLE
 //            else indicator.visibility = View.GONE
-            if (isMeOwner){
-                if (affiliation.affiliationType == MUCLightAffiliation.owner) {
+            if (isMeOwner) {
+                if (affiliationViewItem.affiliation.affiliationType == MUCLightAffiliation.owner) {
                     btnDelete.visibility = View.GONE
                 } else {
                     btnDelete.visibility = View.VISIBLE
-                    btnDelete.setOnClickListener { listener.invoke(affiliation, btnDelete) }
+                    btnDelete.setOnClickListener {
+                        listener.invoke(
+                            affiliationViewItem.affiliation,
+                            btnDelete
+                        )
+                    }
                 }
-            } else {btnDelete.visibility = View.GONE}
+            } else {
+                btnDelete.visibility = View.GONE
+            }
 
-            if (affiliation.affiliationType == MUCLightAffiliation.owner) {
+            if (affiliationViewItem.affiliation.affiliationType == MUCLightAffiliation.owner) {
                 ivOwner.visibility = View.VISIBLE
             } else {
                 ivOwner.visibility = View.GONE
             }
 
-            v.setOnClickListener { listener.invoke(affiliation, v) }
-            AvatarHelper.placeRoundAvatar(avatarView, affiliation.affiliationContact.avatar, affiliation.affiliationContact.getShortName(), affiliation.affiliationContact.contactJid)
+            v.setOnClickListener { listener.invoke(affiliationViewItem.affiliation, v) }
+            AvatarHelper.placeRoundAvatar(
+                avatarView,
+                affiliationViewItem.contact?.avatar,
+                affiliationViewItem.contact?.getShortName(),
+                affiliationViewItem.affiliation.affiliationJid.asEntityBareJidIfPossible()
+                    .asEntityBareJidString()
+            )
         }
     }
 }

@@ -1,17 +1,17 @@
 package ooo.emessi.messenger.utils
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Build
 import android.os.Environment
 import android.os.Environment.MEDIA_MOUNTED
-import android.os.Environment.getExternalStorageDirectory
 import android.util.Base64
 import ooo.emessi.messenger.App
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
+import kotlin.math.roundToInt
 
 
 fun convertCompressedByteArrayToBitmap(src: ByteArray?): Bitmap? {
@@ -84,4 +84,9 @@ fun createThumbnailBase64(bitmap: Bitmap): String{
     bitmap.compress(Bitmap.CompressFormat.PNG, 80, os)
     val byteArray = os.toByteArray()
     return Base64.encodeToString(byteArray, Base64.DEFAULT)
+}
+
+fun Int.toPx(context: Context): Int {
+    return (this * context.resources.displayMetrics.density).roundToInt()
+//    return this
 }

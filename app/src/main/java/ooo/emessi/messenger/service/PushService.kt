@@ -3,17 +3,18 @@ package ooo.emessi.messenger.service
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import ooo.emessi.messenger.managers.PubSubManager
 import ooo.emessi.messenger.utils.helpers.LogHelper
-import ooo.emessi.messenger.xmpp.XMPPConnectionApi
+import ooo.emessi.messenger.xmpp.XMPPApi
+import org.koin.core.KoinComponent
+import org.koin.core.get
 import java.util.*
 
 
-class PushService : FirebaseMessagingService() {
+class PushService : FirebaseMessagingService(), KoinComponent {
     private val TAG = this.javaClass.simpleName
+    private val xmppApi = get<XMPPApi>()
 
     override fun onNewToken(token: String) {
-        if (XMPPConnectionApi.isInitialized)
         sendRegistrationToServer(token)
 
         super.onNewToken(token)
@@ -21,8 +22,7 @@ class PushService : FirebaseMessagingService() {
 
     private fun sendRegistrationToServer(token: String) {
         Log.d(TAG, "NewToken: " + token)
-        val pubSubManager = PubSubManager(token)
-        pubSubManager.sendPushDiscoverIq()
+        xmppApi.registerFBToken(token)
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {

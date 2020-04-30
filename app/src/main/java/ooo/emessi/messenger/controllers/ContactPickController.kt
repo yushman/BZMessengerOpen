@@ -1,68 +1,55 @@
 package ooo.emessi.messenger.controllers
 
-import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import ooo.emessi.messenger.data.model.wrapped_model.ContactPickItem
-import ooo.emessi.messenger.data.repo.ContactRepo
-import ooo.emessi.messenger.utils.toEntityBareJid
-import ooo.emessi.messenger.xmpp.XMPPConnectionApi
-import org.koin.core.KoinComponent
-import org.koin.core.get
-import java.util.*
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.view_item_model.contact.ContactPickViewItem
+import ooo.emessi.messenger.data.model.view_item_model.contact.ContactViewItem
+import ooo.emessi.messenger.managers.chat.MucChatManager
 
-class ContactPickController : KoinComponent{
-    private val contactRepo: ContactRepo = get()
-    val contactsW: MutableLiveData<List<ContactPickItem>> = MutableLiveData()
-    val selectedContact = Transformations.map(contactsW) { list -> list.filter { it.isSelected }}
+class ContactPickController : AbstractContactListController(){
+    val contactPickViewItems: MutableLiveData<List<ContactPickViewItem>> = MutableLiveData()
+    val selectedContacts = Transformations.map(contactPickViewItems) { list -> list.filter { it.isSelected }}
 
-    fun loadContacts() = CoroutineScope(Dispatchers.IO).launch{
-        contactsW.postValue(contactRepo.getContacts().map { it.toWrappedContact() })
+    override fun loadContacts() {
+        super.loadContacts()
+        contactPickViewItems.postValue(cookContactPickViewItems(contactViewItems.value))
     }
 
     fun handlePickContact(jid: String){
-        Log.d("ContactPicker", jid)
-        contactsW.value = contactsW.value!!.map {
-            if (it.contact.contactJid == jid) it.copy(isSelected = !it.isSelected)
+        contactPickViewItems.value = contactPickViewItems.value!!.map {
+            if (it.contactViewItem.contactDto.contactJid == jid) it.copy(isSelected = !it.isSelected)
             else it
         }
-
     }
 
     fun handleUnpickContact(jid: String) {
-        contactsW.value = contactsW.value!!.map {
-            if (it.contact.contactJid == jid) it.copy(isSelected = false)
+        contactPickViewItems.value = contactPickViewItems.value!!.map {
+            if (it.contactViewItem.contactDto.contactJid == jid) it.copy(isSelected = false)
             else it
         }
     }
 
     fun addContactToChat(
-        chatId: String,
-        selectedList: List<ContactPickItem>
+        chatDto: ChatDto
     ) {
-        val mucm =
-            MUCLightChatsController(chatId)
-        val occupants = selectedList.map { it.contact.contactJid.toEntityBareJid() }
-        occupants.forEach {
-            Log.d("PickManager", it.toString())
+        selectedContacts.value?.let { list ->
+            val mucm = MucChatManager(chatDto)
+            mucm.addOccupants(list.map { it.contactViewItem.contactDto })
         }
-        try {
-            mucm.addOccupants(occupants)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
     }
 
     fun createNewChat(name: String) {
+        selectedContacts.value?.let { list ->
+            val chat = chatFactory.createMucChat(name, list.map { it.contactViewItem.contactDto })
+            newChat.postValue(chat)
+        }
+    }
 
-        val jid = UUID.randomUUID().toString() + "@muclight." + XMPPConnectionApi.getConnection().xmppServiceDomain.toString()
-        val mucm = MUCLightChatsController(jid)
-        Log.d("ContactPicker",contactsW.value?.size.toString())
-        val occupants = contactsW.value!!.filter { it.isSelected }.map { it.contact.contactJid.toEntityBareJid() }
-        mucm.createMucLightChat(name, occupants)
+    private fun cookContactPickViewItems(list: List<ContactViewItem>?): List<ContactPickViewItem> {
+        var result = listOf<ContactPickViewItem>()
+        if (list.isNullOrEmpty()) return result
+        result = list.map { ContactPickViewItem(false, it) }
+        return result
     }
 }

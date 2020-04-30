@@ -2,22 +2,23 @@ package ooo.emessi.messenger.ui.fragments
 
 
 import android.os.Bundle
-import android.text.Editable
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.bz_model.message.BZMessage
+import ooo.emessi.messenger.data.model.dto_model.message.MessageDto
 
 /**
  * A simple [Fragment] subclass.
  */
-class BottomMessageActionFragment(val message: BZMessage, val isEditable: Boolean, val listener:(View) -> Unit) : BottomSheetDialogFragment() {
+class BottomMessageActionFragment(
+    val messageDto: MessageDto,
+    val isEditable: Boolean,
+    val listener: (View) -> Unit
+) : BottomSheetDialogFragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

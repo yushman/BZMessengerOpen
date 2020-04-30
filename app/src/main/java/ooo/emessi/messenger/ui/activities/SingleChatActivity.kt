@@ -7,39 +7,45 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log.d
+import android.provider.MediaStore
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.FileProvider
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.r0adkll.slidr.Slidr
-
+import ooo.emessi.messenger.BuildConfig
+import ooo.emessi.messenger.R
+import ooo.emessi.messenger.constants.Constants
+import ooo.emessi.messenger.constants.Constants.KEY_CHAT
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.dto_model.message.MessageDto
+import ooo.emessi.messenger.data.model.view_item_model.chat.ChatViewItem
+import ooo.emessi.messenger.data.model.view_item_model.message.MessageListViewItem
+import ooo.emessi.messenger.data.model.view_item_model.message.MessageViewItemContent
+import ooo.emessi.messenger.ui.adapters.MessageItemTouchHelperCallback
 import ooo.emessi.messenger.ui.adapters.MessagesAdapter
 import ooo.emessi.messenger.ui.fragments.BottomAttachDialogFragment
-import ooo.emessi.messenger.ui.viewmodels.ChatActivityViewModel
-import ooo.emessi.messenger.ui.viewmodels.ChatViewModelFactory
-import ooo.emessi.messenger.R
-import android.provider.MediaStore
-import android.widget.*
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.FileProvider
-import ooo.emessi.messenger.BuildConfig
-import ooo.emessi.messenger.constants.Constants
-import ooo.emessi.messenger.data.model.bz_model.chat.BZChat
-import ooo.emessi.messenger.data.model.bz_model.message.BZMessage
-import ooo.emessi.messenger.data.model.wrapped_model.MessageItem
 import ooo.emessi.messenger.ui.fragments.BottomMessageActionFragment
+import ooo.emessi.messenger.ui.viewmodels.ChatViewModelFactory
+import ooo.emessi.messenger.ui.viewmodels.SingleChatActivityViewModel
 import ooo.emessi.messenger.utils.getCameraFilePath
 import ooo.emessi.messenger.utils.getPath
 import ooo.emessi.messenger.utils.helpers.AvatarHelper
 import ooo.emessi.messenger.utils.helpers.KeyboardHelper
 import ooo.emessi.messenger.utils.helpers.SoundHelper
+import timber.log.Timber
 
 
 class SingleChatActivity : AppCompatActivity() {
@@ -56,7 +62,7 @@ class SingleChatActivity : AppCompatActivity() {
     private lateinit var btnSend: ImageView
     private lateinit var btnAttach: ImageView
     private lateinit var btnCamera: ImageView
-    private lateinit var chatViewModel: ChatActivityViewModel
+    private lateinit var chatViewModel: SingleChatActivityViewModel
     private lateinit var toolbar: Toolbar
     private lateinit var tvChatName: TextView
     private lateinit var ivAvatar: ImageView
@@ -66,11 +72,10 @@ class SingleChatActivity : AppCompatActivity() {
     private lateinit var tvMessageActionText: TextView
     private lateinit var tvMessageActionDescription: TextView
 
-    private var chatId: String = ""
+    private lateinit var chatDto: ChatDto
     private var newFlag = false
 
-    var filePaths = arrayListOf<String>()
-    var currentCameraPicturePath = ""
+    private var currentCameraPicturePath = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,9 +87,6 @@ class SingleChatActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        d(TAG, requestCode.toString())
-        d(TAG, resultCode.toString())
-        d(TAG, data.toString())
         if (resultCode == Activity.RESULT_OK) {
             when(requestCode){
                 FILE_PICKER_REQUEST_CODE, IMAGE_PICKER_REQUEST_CODE -> {
@@ -101,17 +103,16 @@ class SingleChatActivity : AppCompatActivity() {
                             paths.add(getPath(this, it)!!)
                         }
                         if (paths.isNotEmpty()) {
-                            d(TAG, paths.toString())
+                            Timber.i(paths.toString())
                             addAttachmentsToModel(paths)
-                        }
-                        else d(TAG, "path empty")
+                        } else Timber.i("path empty")
                     }
                 }
                 CAMERA_REQUEST_CODE -> {
                     if (currentCameraPicturePath.isNotEmpty()) {
-                        d(TAG, currentCameraPicturePath)
+                        Timber.i("Camera path - $currentCameraPicturePath")
                         addAttachmentsToModel(listOf(currentCameraPicturePath))
-                    } else d(TAG, "path empty")
+                    } else Timber.i("Camera path empty")
                 }
             }
         }
@@ -120,6 +121,7 @@ class SingleChatActivity : AppCompatActivity() {
 
     override fun onResume() {
         chatViewModel.flushUnread()
+        chatViewModel.loadChatInfo()
         super.onResume()
     }
 
@@ -146,8 +148,8 @@ class SingleChatActivity : AppCompatActivity() {
         try {
             val bundle: Bundle? = intent.extras
             if (bundle != null) {
-                chatId = bundle.getString("JID", null)
-                newFlag = bundle.getBoolean("NEW_FLAG", false)
+                chatDto = bundle.getParcelable<ChatDto>(KEY_CHAT)!!
+//                newFlag = bundle.getBoolean("NEW_FLAG", false)
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
@@ -155,8 +157,8 @@ class SingleChatActivity : AppCompatActivity() {
     }
 
     private fun initViewModel() {
-        chatViewModel = ViewModelProviders.of(this, ChatViewModelFactory(chatId)).get(ChatActivityViewModel::class.java)
-        if (newFlag) chatViewModel.createChat(chatId)
+        chatViewModel = ViewModelProvider(this, ChatViewModelFactory(chatDto)).get(SingleChatActivityViewModel::class.java)
+//        if (newFlag) chatViewModel.createChat(chatId)
         chatViewModel.messageItems.observe(this, Observer { messagesAdapter.updateMessages(it)
             if (messagesAdapter.itemCount != 0) {recyclerView.scrollToPosition(messagesAdapter.itemCount - 1)}
             })
@@ -165,21 +167,18 @@ class SingleChatActivity : AppCompatActivity() {
 //            })
 //        chatViewModel.attachments.observe(this, Observer { addAttachmentsToView(it) })
 //        chatViewModel.url.observe(this, Observer { etInput.setText(it.path) })
-        chatViewModel.chat.observe(this, Observer { updateUI(it)})
+        chatViewModel.chatViewItem.observe(this, Observer { updateUI(it)})
         chatViewModel.messageSended.observe(this, Observer { playSendSound(it) })
-        chatViewModel.updateLastActivity()
+//        chatViewModel.updateLastActivity()
 
     }
 
-    private fun updateUI(bzChat: BZChat) {
-        tvChatName.text = bzChat.name
-        bzChat.contact?.let {
-            if (it.avatar != null)
-                AvatarHelper.placeRoundAvatar(ivAvatar, it.avatar, bzChat.getShortName(), chatId)
-            tvLastActivity.text = it.getLastActivity()
+    private fun updateUI(chatViewItem: ChatViewItem) {
+        tvChatName.text = chatViewItem.chatDto.name
+        chatViewItem.contactDto?.let {
+            AvatarHelper.placeRoundAvatar(ivAvatar, it.avatar, it.getShortName(), it.contactJid)
+            tvLastActivity.text = it.getLastActivityInfo()
         }
-        if (bzChat.contact?.avatar != null)
-            AvatarHelper.placeRoundAvatar(ivAvatar, bzChat.contact!!.avatar, bzChat.getShortName(), chatId)
     }
 
     private fun initViews() {
@@ -210,10 +209,10 @@ class SingleChatActivity : AppCompatActivity() {
         etInput.isFocusableInTouchMode = true
 //        etInput.showSoftInputOnFocus = true
 
-        tvChatName.text = chatId
-        AvatarHelper.placeRoundAvatar(ivAvatar, null, chatId.capitalize().removeRange(2, chatId.length), chatId)
+        tvChatName.text = chatDto.name
+        AvatarHelper.placeRoundAvatar(ivAvatar, null, chatDto.name.capitalize().removeRange(2, chatDto.name.length), chatDto.name)
 
-        messagesAdapter = MessagesAdapter{ messsage, isEditable -> showMessageActionDialog(messsage, isEditable)}
+        messagesAdapter = MessagesAdapter{ v, messageItem ->  showMessageActionDialog(v, messageItem)}
 
         val lm = LinearLayoutManager(this)
         lm.stackFromEnd = true
@@ -221,6 +220,10 @@ class SingleChatActivity : AppCompatActivity() {
         recyclerView.layoutManager = lm
         recyclerView.adapter = messagesAdapter
         recyclerView.itemAnimator = null
+
+        val touchCallback = MessageItemTouchHelperCallback(messagesAdapter) { replySwipe(it) }
+        val touchHelper = ItemTouchHelper(touchCallback)
+        touchHelper.attachToRecyclerView(recyclerView)
 
         btnSend.setOnClickListener { sendMessage() }
         btnAttach.setOnClickListener { showBottomAttachDialog() }
@@ -235,7 +238,7 @@ class SingleChatActivity : AppCompatActivity() {
     }
 
     private fun addAttachmentsToModel(docPaths: List<String>) {
-        chatViewModel.sendMessage(attachments =  docPaths)
+        chatViewModel.sendAttachments(docPaths)
     }
 
     private fun chatDeleteChat() {
@@ -253,22 +256,22 @@ class SingleChatActivity : AppCompatActivity() {
 
     private fun routeToChatInfoActivity() {
         val i = Intent(this, SingleChatInfoActivity::class.java)
-        i.putExtra("JID", chatId)
+        i.putExtra(KEY_CHAT, chatDto)
         startActivity(i)
     }
 
-    private fun updateOnline(it: Boolean) {
-        val isOnline = if (it) "Online" else "Offline"
-        title = "$chatId is $isOnline"
-    }
+//    private fun updateOnline(it: Boolean) {
+//        val isOnline = if (it) "Online" else "Offline"
+//        title = "$chatId is $isOnline"
+//    }
 
-    private fun showMessageActionDialog(it: MessageItem, isEditable: Boolean) {
+    private fun showMessageActionDialog(v: View, message: MessageViewItemContent.MessageItem) {
         KeyboardHelper.hideKeyboard(etInput, this)
-        val bsf = BottomMessageActionFragment(it.message, isEditable){view -> proceedMessageAction(view, it.message)}
+        val bsf = BottomMessageActionFragment(message.message.messageDto, message.isEditable) {view -> proceedMessageAction(view, message.message.messageDto)}
         bsf.show(supportFragmentManager, bsf.tag)
     }
 
-    private fun proceedMessageAction(view: View, it: BZMessage) {
+    private fun proceedMessageAction(view: View, it: MessageDto) {
         when (view.id){
             R.id.tv_reply_message_action -> replyClick(it)
             R.id.tv_forward_message_action -> forwardClick(it)
@@ -278,8 +281,8 @@ class SingleChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun editClick (it: BZMessage){
-        if (it.payloadType == BZMessage.PayloadType.NONE){
+    private fun editClick(it: MessageDto) {
+        if (it.payloadType == MessageDto.PayloadType.NONE) {
             layoutMessageAction.visibility = View.VISIBLE
             tvMessageActionDescription.text = "Edit"
             tvMessageActionText.text = it.body
@@ -292,25 +295,27 @@ class SingleChatActivity : AppCompatActivity() {
             KeyboardHelper.showKeyboard(etInput, this)
         }
     }
-    private fun copyClick (it: BZMessage){
-        if (it.payloadType == BZMessage.PayloadType.NONE) {
+
+    private fun copyClick(it: MessageDto) {
+        if (it.payloadType == MessageDto.PayloadType.NONE) {
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clipData = ClipData.newPlainText(Constants.CLIP_LABEL, it.body)
             clipboardManager.setPrimaryClip(clipData)
         }
     }
-    private fun deleteClick (it: BZMessage){
+
+    private fun deleteClick(it: MessageDto) {
         chatViewModel.deleteMessage(it)
     }
 
-    private fun forwardClick(it: BZMessage) {
-        val i = Intent(this, NewMainActivity::class.java)
-        i.putExtra("FORWARDED_MESSAGE_ID", it.id)
+    private fun forwardClick(it: MessageDto) {
+        val i = Intent(this, ForwardMessageActivity::class.java)
+        i.putExtra(Constants.FORWARDED_MESSAGE_ID, it.id)
         startActivity(i)
         finish()
     }
 
-    private fun replyClick(it: BZMessage) {
+    private fun replyClick(it: MessageDto) {
         layoutMessageAction.visibility = View.VISIBLE
         tvMessageActionDescription.text = it.from
         tvMessageActionText.text = it.body
@@ -319,6 +324,12 @@ class SingleChatActivity : AppCompatActivity() {
         etInput.setSelection(0)
         chatViewModel.setReplyedMessage(it)
         KeyboardHelper.showKeyboard(etInput, this)
+    }
+
+    private fun replySwipe(it: MessageListViewItem) {
+        val messageContent = it.content as MessageViewItemContent.MessageItem
+        SoundHelper.vibrate(this)
+        replyClick(messageContent.message.messageDto)
     }
 
     private fun showBottomAttachDialog() {
@@ -336,7 +347,7 @@ class SingleChatActivity : AppCompatActivity() {
     }
 
     private fun sendSelectedImages(docPaths: List<String>) {
-        chatViewModel.sendMessage(attachments =  docPaths)
+        chatViewModel.sendAttachments(attachments =  docPaths)
         flushMessageActions()
     }
 
@@ -382,13 +393,10 @@ class SingleChatActivity : AppCompatActivity() {
         flushMessageActions()
     }
 
-    private fun playSendSound(it: Boolean) {
-        if (!it) return
+    private fun playSendSound(message: MessageDto) {
+        if (!message.isSended) return
         SoundHelper.playSendSound(this)
-//        val noti = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-//        val r = RingtoneManager.getRingtone(this, noti)
-//        r.play()
-        chatViewModel.flushMessageSended()
+        SoundHelper.vibrate(this)
     }
 
     private fun flushMessageActions() {

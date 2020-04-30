@@ -4,6 +4,4 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.SearchView
 
-class CustomSearchView(context: Context, attrs: AttributeSet) : SearchView(context, attrs) {
-
-}
+class CustomSearchView(context: Context, attrs: AttributeSet) : SearchView(context, attrs)

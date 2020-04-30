@@ -106,7 +106,7 @@ enum class TimeUnits{
     DAY
 }
 
-enum class Template private constructor(private val template: String) {
+enum class Template(private val template: String) {
     STRING_DAY_MONTH_YEAR("d MMMM yyyy"),
     STRING_DAY_MONTH("d MMMM"),
     STRING_FILE_SAVE("dMMyyyyHHmm"),

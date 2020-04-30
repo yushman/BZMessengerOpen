@@ -14,7 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.children
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,7 +25,9 @@ import com.google.android.material.textfield.TextInputLayout
 import com.miguelcatalan.materialsearchview.MaterialSearchView
 import com.r0adkll.slidr.Slidr
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.wrapped_model.ContactPickItem
+import ooo.emessi.messenger.constants.Constants.KEY_CHAT
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.view_item_model.contact.ContactPickViewItem
 import ooo.emessi.messenger.ui.adapters.ContactsPickAdapter
 import ooo.emessi.messenger.ui.viewmodels.ContactPickActivityViewModel
 
@@ -42,8 +44,8 @@ class ContactPickActivity : AppCompatActivity() {
     private lateinit var fabAddToChat: FloatingActionButton
     private lateinit var contactPickViewModel: ContactPickActivityViewModel
 
-    private var chatId = ""
-    private var selectedList = listOf<ContactPickItem>()
+    private var chatDto: ChatDto? = null
+    private var selectedList = listOf<ContactPickViewItem>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +56,11 @@ class ContactPickActivity : AppCompatActivity() {
         initFromBundle()
     }
 
+    override fun onResume() {
+        contactPickViewModel.loadContacts()
+        super.onResume()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_contact_select, menu)
         val mi = menu.findItem(R.id.action_search_main)
@@ -61,22 +68,32 @@ class ContactPickActivity : AppCompatActivity() {
         searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 if (!query.isNullOrEmpty())
-                    contactsAdapter.updateContacts(contactPickViewModel.contacts.value?.filter{it.contact.nickName.contains(query, true)} ?: listOf())
-                else contactsAdapter.updateContacts(contactPickViewModel.contacts.value ?: listOf())
+                    contactsAdapter.updateContacts(contactPickViewModel.contactPickItems.value?.filter {
+                        it.contactViewItem.contactDto.name.contains(
+                            query,
+                            true
+                        )
+                    } ?: listOf())
+                else contactsAdapter.updateContacts(contactPickViewModel.contactPickItems.value ?: listOf())
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (!newText.isNullOrEmpty())
-                    contactsAdapter.updateContacts(contactPickViewModel.contacts.value?.filter{it.contact.nickName.contains(newText, true)} ?: listOf())
-                else contactsAdapter.updateContacts(contactPickViewModel.contacts.value ?: listOf())
+                    contactsAdapter.updateContacts(contactPickViewModel.contactPickItems.value?.filter {
+                        it.contactViewItem.contactDto.name.contains(
+                            newText,
+                            true
+                        )
+                    } ?: listOf())
+                else contactsAdapter.updateContacts(contactPickViewModel.contactPickItems.value ?: listOf())
                 return true
             }
 
         })
         searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
             override fun onSearchViewClosed() {
-                contactsAdapter.updateContacts(contactPickViewModel.contacts.value ?: listOf())
+                contactsAdapter.updateContacts(contactPickViewModel.contactPickItems.value ?: listOf())
             }
 
             override fun onSearchViewShown() {
@@ -104,7 +121,7 @@ class ContactPickActivity : AppCompatActivity() {
         val bundle = intent.extras
         if (bundle != null){
             try {
-                chatId = bundle.getString("JID","")
+                chatDto = bundle.getParcelable(KEY_CHAT)
             } catch (e: Exception){
                 e.printStackTrace()
             }
@@ -143,20 +160,20 @@ class ContactPickActivity : AppCompatActivity() {
 
     private fun addContactsClick() {
         Log.d(TAG, "size" + selectedList.size.toString())
-        if (selectedList.isNullOrEmpty()) showDialogNoSelected().show()
+        if (selectedList.isNullOrEmpty()) makeDialogNoSelected().show()
         else {
-            if (chatId.isNotEmpty()) addContactsToChat(chatId)
-            else showDialogChatName().show()
+            if (chatDto != null) addContactsToChat(chatDto!!)
+            else makeDialogAskChatName().show()
 //        finish()
         }
     }
 
-    private fun addContactsToChat(chatId: String) {
-        contactPickViewModel.addContactToChat(chatId, selectedList)
+    private fun addContactsToChat(chatDto: ChatDto) {
+        contactPickViewModel.addContactToChat(chatDto)
         finish()
     }
 
-    private fun showDialogNoSelected(): AlertDialog {
+    private fun makeDialogNoSelected(): AlertDialog {
         return AlertDialog.Builder(this)
             .setTitle("Error")
             .setMessage("Select any contacts")
@@ -165,7 +182,7 @@ class ContactPickActivity : AppCompatActivity() {
 
     }
 
-    private fun showDialogChatName(): AlertDialog {
+    private fun makeDialogAskChatName(): AlertDialog {
 
         val v = LayoutInflater.from(this).inflate(R.layout.dialog_ask_chat_name, null)
         val etChatName = v.findViewById<EditText>(R.id.et_dialog_ask_chat_name)
@@ -200,20 +217,18 @@ class ContactPickActivity : AppCompatActivity() {
         } else {
             contactPickViewModel.createNewChat(et.text.toString())
             dialog.dismiss()
-            finish()
         }
 
     }
 
-    private fun handlePickContact(it: ContactPickItem) {
-        contactPickViewModel.handlePickContact(it.contact.contactJid)
+    private fun handlePickContact(it: ContactPickViewItem) {
+        contactPickViewModel.handlePickContact(it.contactViewItem.contactDto.contactJid)
         addChipToGroup(it)
     }
 
     private fun initViewModels() {
-        contactPickViewModel = ViewModelProviders.of(this).get(ContactPickActivityViewModel::class.java)
-        contactPickViewModel.contacts.observe(this, Observer { contactsAdapter.updateContacts(it) })
-        contactPickViewModel.loadContacts()
+        contactPickViewModel = ViewModelProvider(this).get(ContactPickActivityViewModel::class.java)
+        contactPickViewModel.contactPickItems.observe(this, Observer { contactsAdapter.updateContacts(it) })
         contactPickViewModel.selectedContacts.observe(this, Observer { list ->
             selectedList = list
             if (selectedList.isNullOrEmpty()) {
@@ -226,39 +241,35 @@ class ContactPickActivity : AppCompatActivity() {
             }
             Log.d(TAG, selectedList.toString())
         })
+        contactPickViewModel.newChat.observe(this, Observer { routeToChatActivity(it) })
     }
 
-    private fun addChipToGroup(contactPick: ContactPickItem){
+    private fun addChipToGroup(contactPick: ContactPickViewItem){
         val views = chipGroup.children.associate { view -> view.tag to view }
         if (contactPick.isSelected) {
-            chipGroup.removeView(views[contactPick.contact.contactJid])
+            chipGroup.removeView(views[contactPick.contactViewItem.contactDto.contactJid])
             return
         }
         val chip = Chip(this).apply {
-            text = contactPick.contact.nickName
+            text = contactPick.contactViewItem.contactDto.name
             isCloseIconVisible = true
-            tag = contactPick.contact.contactJid
+            tag = contactPick.contactViewItem.contactDto.contactJid
             isClickable = true
             setChipBackgroundColorResource(R.color.color_chip_primary)
         }
         chip.setOnCloseIconClickListener {
-            contactPickViewModel.handleUnpickContact(contactPick.contact.contactJid)
+            contactPickViewModel.handleUnpickContact(contactPick.contactViewItem.contactDto.contactJid)
             chipGroup.removeView(chip)
         }
         chipGroup.addView(chip)
     }
 
-//    private fun updateChips(contacts: List<ContactItem>){
-//        chipGroup.visibility = if (contacts.isEmpty()) View.GONE else View.VISIBLE
-//        val contactsList = contacts
-//            .associateBy { item -> item.contact.contactJid }
-//            .toMutableMap()
-//        val views = chipGroup.children.associate { view -> view.tag to view }
-//        for ((k,v) in views){
-//            if (!contactsList.containsKey(k))
-//        }
-//
-//    }
+    private fun routeToChatActivity(chat: ChatDto) {
+        val i = Intent(this, MucLightChatActivity::class.java)
+        i.putExtra(KEY_CHAT, chat)
+        startActivity(i)
+        finish()
+    }
 
     private fun routeToNewContactActivity() {
         val i = Intent(this, ContactAddActivity::class.java)

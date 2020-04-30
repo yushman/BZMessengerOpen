@@ -1,27 +1,23 @@
 package ooo.emessi.messenger.data.repo
 
-import android.content.Context
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import ooo.emessi.messenger.data.database.BZDatabase
-import ooo.emessi.messenger.data.model.bz_model.account.BZAccount
+import ooo.emessi.messenger.data.database.AccountDao
+import ooo.emessi.messenger.data.model.dto_model.account.AccountDto
 
-class AccountRepo (context: Context) {
-    private val dataBase = BZDatabase.getInstance(context)
-    private val dao = dataBase.accountDao()
+class AccountRepo(private val dao: AccountDao) {
 
-    fun saveAccount(bzAccount: BZAccount) = CoroutineScope(Dispatchers.IO).launch {
-        dao.insertBZAccount(bzAccount)
+    fun saveAccount(accountDto: AccountDto) = CoroutineScope(Dispatchers.IO).launch {
+        dao.insertBZAccount(accountDto)
     }
 
-    suspend fun getAccount(): BZAccount? = withContext(Dispatchers.IO){
+    suspend fun getAccount(): AccountDto? = withContext(Dispatchers.IO) {
         return@withContext dao.selectBZAccount()
     }
 
-    fun deleteAccount() = CoroutineScope(Dispatchers.IO).launch{
-        val acc = getAccount()
-        dao.deleteBZAccount(acc!!)
+    fun deleteAccounts() = CoroutineScope(Dispatchers.IO).launch{
+        dao.deleteBZAccounts()
     }
 }

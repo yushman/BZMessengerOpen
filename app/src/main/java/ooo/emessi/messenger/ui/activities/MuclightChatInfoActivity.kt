@@ -9,19 +9,21 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.bz_model.chat.BZChat
-import ooo.emessi.messenger.data.model.bz_model.muc_affiliation.BZMucAffiliation
+import ooo.emessi.messenger.constants.Constants.KEY_CHAT
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.dto_model.muc_affiliation.MucAffiliationDto
+import ooo.emessi.messenger.data.model.view_item_model.chat.ChatViewItem
 import ooo.emessi.messenger.ui.adapters.MucAffiliationsAdapter
-import ooo.emessi.messenger.utils.helpers.AvatarHelper
 import ooo.emessi.messenger.ui.viewmodels.ChatViewModelFactory
 import ooo.emessi.messenger.ui.viewmodels.MucLightChatInfoActivityViewModel
+import ooo.emessi.messenger.utils.helpers.AvatarHelper
 
 class MuclightChatInfoActivity : AppCompatActivity() {
 
@@ -36,7 +38,7 @@ class MuclightChatInfoActivity : AppCompatActivity() {
     private lateinit var affiliationsAdapter: MucAffiliationsAdapter
     private lateinit var chatViewModel: MucLightChatInfoActivityViewModel
 
-    var chatId = ""
+    private lateinit var chatDto: ChatDto
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,6 +52,7 @@ class MuclightChatInfoActivity : AppCompatActivity() {
 
     override fun onResume() {
         chatViewModel.loadAffiliations()
+        chatViewModel.loadChatInfo()
         super.onResume()
     }
 
@@ -57,7 +60,7 @@ class MuclightChatInfoActivity : AppCompatActivity() {
         try {
             val bundle = intent.extras
             if (bundle != null){
-                chatId = bundle.getString("JID","")
+                chatDto = bundle.getParcelable<ChatDto>(KEY_CHAT)!!
             }
         } catch (e: Exception){
             e.printStackTrace()
@@ -65,21 +68,23 @@ class MuclightChatInfoActivity : AppCompatActivity() {
     }
 
     private fun initViewModels() {
-        chatViewModel = ViewModelProviders.of(this, ChatViewModelFactory(chatId)).get(
+        chatViewModel = ViewModelProvider(this, ChatViewModelFactory(chatDto)).get(
             MucLightChatInfoActivityViewModel::class.java)
-        chatViewModel.chat.observe(this, Observer { updateUI(it) })
+        chatViewModel.chatViewItem.observe(this, Observer { updateUI(it) })
         chatViewModel.affiliations.observe(this, Observer { affiliationsAdapter.updateAffiliations(it) })
         chatViewModel.isMeOwner.observe(this, Observer { affiliationsAdapter.updateOwner(it) })
     }
 
-    private fun updateUI(it: BZChat) {
-        val nickName = it.name
-        val lastActivity = it.getLastActivity()
-        tvChatName.setText(nickName)
-        tvLastOnline.setText(lastActivity)
-        tvJid.setText(it.jid)
-        AvatarHelper.placeRoundAvatar(ivAvatar, it.contact?.avatar, it.getShortName(), it.jid)
-
+    private fun updateUI(chatViewItem: ChatViewItem) {
+        val nickName = chatViewItem.chatDto.name
+        tvChatName.text = nickName
+        tvLastOnline.text = chatViewItem.contactDto?.getLastActivityInfo()
+        tvJid.text = chatViewItem.chatDto.jid
+        AvatarHelper.placeRoundAvatar(
+            ivAvatar,
+            chatViewItem.contactDto?.avatar,
+            chatViewItem.contactDto?.getShortName(),
+            chatViewItem.chatDto.name)
     }
 
     private fun initViews() {
@@ -98,7 +103,7 @@ class MuclightChatInfoActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.rv_muclightchat_info)
 
         btnLeave.setOnClickListener { chatViewModel.leaveChat() }
-        fabAdd.setOnClickListener { routeToContactPickActivity(chatId) }
+        fabAdd.setOnClickListener { routeToContactPickActivity(chatDto) }
 
         val lm = LinearLayoutManager(this).apply { reverseLayout }
         val decorator = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
@@ -115,25 +120,25 @@ class MuclightChatInfoActivity : AppCompatActivity() {
         }
     }
 
-    private fun onRvItemClicked(affiliation: BZMucAffiliation, view: View) {
+    private fun onRvItemClicked(affiliationDto: MucAffiliationDto, view: View) {
         when (view.id){
             R.id.btn_contact_item_delete -> {
-                chatViewModel.deleteAffiliation(affiliation)
+                chatViewModel.deleteAffiliation(affiliationDto)
                 chatViewModel.loadAffiliations()
             }
-                else -> routeToContactActivity(affiliation)
+            else -> routeToContactActivity(affiliationDto)
         }
     }
 
-    private fun routeToContactPickActivity(chatId: String) {
+    private fun routeToContactPickActivity(chatDto: ChatDto) {
         val i = Intent(this, ContactPickActivity::class.java)
-        i.putExtra("JID", chatId)
+        i.putExtra(KEY_CHAT, chatDto)
         startActivity(i)
     }
 
-    private fun routeToContactActivity(it: BZMucAffiliation) {
+    private fun routeToContactActivity(it: MucAffiliationDto) {
         val i = Intent(this, ContactAddActivity::class.java)
-        i.putExtra("JID", it.affiliationJid.asEntityBareJidIfPossible().toString())
+        i.putExtra(KEY_CHAT, it.affiliationJid.asEntityBareJidIfPossible().toString())
         startActivity(i)
     }
 }

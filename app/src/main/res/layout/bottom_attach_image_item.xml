@@ -23,12 +23,13 @@
 
     <CheckBox
         android:id="@+id/cb_bottom_attach_item"
+        style="@style/Widget.MaterialComponents.CompoundButton.CheckBox"
         android:layout_width="28dp"
         android:layout_height="28dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
-        android:clickable="false"
+        android:clickable="true"
         android:cursorVisible="false"
         app:layout_constraintEnd_toEndOf="@+id/iv_bottom_attach_item"
         app:layout_constraintTop_toTopOf="parent" />

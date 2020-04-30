@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -19,7 +18,6 @@ import kotlinx.coroutines.withContext
 import ooo.emessi.messenger.App
 import ooo.emessi.messenger.R
 import ooo.emessi.messenger.ui.adapters.ImagesAdapter
-import java.lang.Exception
 
 class BottomAttachDialogFragment(private val listener:(View, List<String>) -> Unit): BottomSheetDialogFragment() {
 
@@ -100,7 +98,7 @@ class BottomAttachDialogFragment(private val listener:(View, List<String>) -> Un
 //                    }
 //                } else {
                 cursor = MediaStore.Images.Media.query(
-                    App.applicationContext()!!.contentResolver,
+                    App.applicationContext().contentResolver,
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     columns, null, "date_added Desc"
                 )
@@ -120,7 +118,7 @@ class BottomAttachDialogFragment(private val listener:(View, List<String>) -> Un
             } finally {
                 if (cursor != null) {
                     try {
-                        cursor.close();
+                        cursor.close()
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }

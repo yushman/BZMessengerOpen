@@ -3,13 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="72dp"
+    android:layout_height="wrap_content"
     android:orientation="vertical">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/relativeLayout"
         android:layout_width="match_parent"
-        android:layout_height="71dp">
+        android:layout_height="66dp">
 
         <TextView
             android:id="@+id/tv_chat_item_user_name"
@@ -20,6 +20,7 @@
             android:layout_marginEnd="16dp"
             android:singleLine="true"
             android:text="asdasd"
+            android:textColor="@color/color_text_dk_gray"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@+id/iv_message_delivered2"
@@ -72,8 +73,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="TextView"
+            android:textColor="@color/color_text_dk_gray"
             android:textSize="14sp"
-            android:textStyle="bold"
             android:visibility="gone"
             app:layout_constraintStart_toStartOf="@+id/tv_chat_item_user_name"
             app:layout_constraintTop_toBottomOf="@+id/tv_chat_item_user_name"
@@ -95,7 +96,7 @@
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/tv_chat_item_last_message"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/tv_chat_item_last_message"
+            app:layout_constraintTop_toTopOf="@+id/tv_chat_item_from"
             tools:visibility="visible" />
 
         <ImageView
@@ -123,15 +124,17 @@
 
         <ImageView
             android:id="@+id/iv_chat_item_multichat"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="2dp"
             android:background="@drawable/bg_indicator_all"
-            android:padding="2dp"
+            android:padding="1dp"
             android:tint="@color/color_online_indicator"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/iv_chat_avatar"
             app:layout_constraintEnd_toEndOf="@+id/iv_chat_avatar"
-            app:srcCompat="@drawable/ic_user_friends_solid"
+            app:srcCompat="@drawable/ic_group_black_24dp"
             tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

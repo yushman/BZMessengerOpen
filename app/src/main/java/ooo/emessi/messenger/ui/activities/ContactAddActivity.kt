@@ -1,6 +1,5 @@
 package ooo.emessi.messenger.ui.activities
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextUtils
@@ -11,15 +10,16 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.r0adkll.slidr.Slidr
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.bz_model.contact.BZContact
+import ooo.emessi.messenger.constants.Constants
+import ooo.emessi.messenger.data.model.dto_model.contact.ContactDto
 import ooo.emessi.messenger.ui.viewmodels.ContactActivityViewModel
 import ooo.emessi.messenger.utils.helpers.AvatarHelper
 import ooo.emessi.messenger.utils.jidIsValid
@@ -62,7 +62,7 @@ class ContactAddActivity : AppCompatActivity() {
         try {
             val bundle: Bundle? = intent.extras
             if (bundle != null) {
-                contactId = bundle.getString(ContactActivity.CONTACT_ID, "")
+                contactId = bundle.getString(Constants.KEY_CONTACT_JID, "")
                 Log.d(TAG, contactId)
             }
         } catch (ex: Exception){
@@ -173,15 +173,20 @@ class ContactAddActivity : AppCompatActivity() {
 
     private fun initViewModel() {
         contactViewModel = ViewModelProviders.of(this).get(ContactActivityViewModel::class.java)
-        contactViewModel.contact.observe(this, Observer { updateUI(it) })
+        contactViewModel.contactDto.observe(this, Observer { updateUI(it) })
     }
 
-    private fun updateUI(contact: BZContact?) {
-        if (contact != null) {
-            tvName.text = contact.nickName
-            etName.setText(contact.nickName)
-            etJid.setText(contact.contactJid)
-            AvatarHelper.placeRoundAvatar(ivAvatar, contact.avatar, contact.nickName.capitalize().first().toString(), contact.contactJid)
+    private fun updateUI(contactDto: ContactDto?) {
+        if (contactDto != null) {
+            tvName.text = contactDto.name
+            etName.setText(contactDto.name)
+            etJid.setText(contactDto.contactJid)
+            AvatarHelper.placeRoundAvatar(
+                ivAvatar,
+                contactDto.avatar,
+                contactDto.name.capitalize().first().toString(),
+                contactDto.contactJid
+            )
         } else {
 
         }

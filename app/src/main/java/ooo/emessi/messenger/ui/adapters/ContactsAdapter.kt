@@ -8,16 +8,15 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.bz_model.contact.BZContact
+import ooo.emessi.messenger.data.model.view_item_model.contact.ContactViewItem
 import ooo.emessi.messenger.utils.helpers.AvatarHelper
 import ooo.emessi.messenger.utils.humanizeDiffForLastActivity
 import ooo.emessi.messenger.utils.toDate
-import ooo.emessi.messenger.xmpp.XMPPConnectionApi
 import java.util.*
 
-class ContactsAdapter (private val listener: (BZContact) -> Unit): RecyclerView.Adapter<ContactsAdapter.ContactsViewHolder>(){
-    var contacts = listOf<BZContact>()
-    var contactsW = listOf<ContactWrapper>()
+class ContactsAdapter(private val listener: (ContactViewItem) -> Unit) :
+    RecyclerView.Adapter<ContactsAdapter.ContactsViewHolder>() {
+    var contacts = listOf<ContactViewItem>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactsViewHolder {
         val v = LayoutInflater.from(parent.context).inflate(R.layout.contact_item, parent, false)
@@ -25,23 +24,22 @@ class ContactsAdapter (private val listener: (BZContact) -> Unit): RecyclerView.
     }
 
     override fun getItemCount(): Int {
-        return contactsW.size
+        return contacts.size
     }
 
     override fun onBindViewHolder(holder: ContactsViewHolder, position: Int) {
-        holder.bind(contactsW[position], listener)
+        holder.bind(contacts[position], listener)
     }
 
-    fun updateContacts(items: List<BZContact>){
-        val _contacts = calculateLeftChars(items.filter { it.contactJid != XMPPConnectionApi.getMyJid().asEntityBareJidIfPossible().toString() }.sortedBy { it.nickName.capitalize() })
+    fun updateContacts(_contacts: List<ContactViewItem>) {
 
         val diffCallback = object : DiffUtil.Callback(){
             override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                return contactsW[oldItemPosition] == _contacts[newItemPosition]
+                return contacts[oldItemPosition] == _contacts[newItemPosition]
             }
 
             override fun getOldListSize(): Int {
-                return contactsW.size
+                return contacts.size
             }
 
             override fun getNewListSize(): Int {
@@ -49,34 +47,14 @@ class ContactsAdapter (private val listener: (BZContact) -> Unit): RecyclerView.
             }
 
             override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                return contactsW[oldItemPosition].hashCode() == _contacts[newItemPosition].hashCode()
+                return contacts[oldItemPosition].hashCode() == _contacts[newItemPosition].hashCode()
             }
 
         }
         val diffResult = DiffUtil.calculateDiff(diffCallback)
-        contactsW = _contacts
+        contacts = _contacts
         diffResult.dispatchUpdatesTo(this)
     }
-
-    private fun calculateLeftChars(contacts: List<BZContact>): List<ContactWrapper> {
-        val contactsWrapped = mutableListOf<ContactWrapper>()
-
-        if (contacts.isNullOrEmpty()) return listOf<ContactWrapper>()
-        if (contacts.size == 1) return listOf<ContactWrapper>(ContactWrapper(true, contacts.first()))
-        else contactsWrapped.add(ContactWrapper(true, contacts.first()))
-        for (i in 1 until contacts.size){
-            val current = contacts[i]
-            val previous = contacts[i-1]
-            if (current.nickName.first().toUpperCase() != previous.nickName.first().toUpperCase()) {
-                contactsWrapped.add(ContactWrapper(true, current))
-            } else {
-                contactsWrapped.add(ContactWrapper(false, current))
-            }
-        }
-        return contactsWrapped
-    }
-
-    inner class ContactWrapper(val hasLeftChar: Boolean, val contact: BZContact)
 
     inner class ContactsViewHolder(view: View): RecyclerView.ViewHolder(view) {
 
@@ -88,26 +66,33 @@ class ContactsAdapter (private val listener: (BZContact) -> Unit): RecyclerView.
 //        val indicator = view.findViewById<View>(R.id.contact_online_indicator)
         val v = view
 
-        fun bind(contact: ContactWrapper, listener: (BZContact) -> Unit) {
+        fun bind(contact: ContactViewItem, listener: (ContactViewItem) -> Unit) {
 //            tvJid.text = contact.contactJid
 
-            tvName.text = contact.contact.nickName
+            tvName.text = contact.contactDto.name
             tvLastActivity.text = when {
-                contact.contact.isOnline -> "Онлайн"
-                contact.contact.lastVisit != null -> Date().humanizeDiffForLastActivity(contact.contact.lastVisit!!.toDate())
+                contact.contactDto.isOnline -> "Онлайн"
+                contact.contactDto.lastActivity != null -> Date().humanizeDiffForLastActivity(
+                    contact.contactDto.lastActivity!!.toDate()
+                )
                 else -> "Еще не заходил"
             }
             if (contact.hasLeftChar){
                 tvLeftChar.visibility = View.VISIBLE
-                tvLeftChar.text = contact.contact.nickName.first().toUpperCase().toString()
+                tvLeftChar.text = contact.contactDto.name.first().toUpperCase().toString()
             } else {
                 tvLeftChar.visibility = View.GONE
             }
 
 //            if (contact.isOnline) indicator.visibility = View.VISIBLE
 //            else indicator.visibility = View.INVISIBLE
-            v.setOnClickListener { listener.invoke(contact.contact) }
-            AvatarHelper.placeRoundAvatar(avatarView, contact.contact.avatar, contact.contact.getShortName(), contact.contact.contactJid)
+            v.setOnClickListener { listener.invoke(contact) }
+            AvatarHelper.placeRoundAvatar(
+                avatarView,
+                contact.contactDto.avatar,
+                contact.contactDto.getShortName(),
+                contact.contactDto.contactJid
+            )
 
 
 

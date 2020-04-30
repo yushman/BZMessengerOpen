@@ -2,20 +2,21 @@ package ooo.emessi.messenger.ui.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.provider.ContactsContract
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.bz_model.chat.BZChat
-import ooo.emessi.messenger.utils.helpers.AvatarHelper
+import ooo.emessi.messenger.constants.Constants.KEY_CHAT
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.view_item_model.chat.ChatViewItem
 import ooo.emessi.messenger.ui.viewmodels.ChatViewModelFactory
 import ooo.emessi.messenger.ui.viewmodels.SingleChatInfoActivityViewModel
+import ooo.emessi.messenger.utils.helpers.AvatarHelper
 
 class SingleChatInfoActivity : AppCompatActivity() {
 
@@ -29,7 +30,7 @@ class SingleChatInfoActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
     private lateinit var chatViewModel: SingleChatInfoActivityViewModel
 
-    var chatId = ""
+    private lateinit var chatDto: ChatDto
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,11 +41,16 @@ class SingleChatInfoActivity : AppCompatActivity() {
         initViewModels()
     }
 
+    override fun onResume() {
+        chatViewModel.loadChatInfo()
+        super.onResume()
+    }
+
     private fun initFromBundle() {
         try {
             val bundle = intent.extras
             if (bundle != null){
-                chatId = bundle.getString("JID","")
+                chatDto = bundle.getParcelable<ChatDto>(KEY_CHAT)!!
             }
         } catch (e: Exception){
             e.printStackTrace()
@@ -52,18 +58,21 @@ class SingleChatInfoActivity : AppCompatActivity() {
     }
 
     private fun initViewModels() {
-        chatViewModel = ViewModelProviders.of(this, ChatViewModelFactory(chatId)).get(SingleChatInfoActivityViewModel::class.java)
-        chatViewModel.chat.observe(this, Observer { updateUI(it) })
+        chatViewModel = ViewModelProvider(this, ChatViewModelFactory(chatDto)).get(SingleChatInfoActivityViewModel::class.java)
+        chatViewModel.chatViewItem.observe(this, Observer { updateUI(it) })
     }
 
-    private fun updateUI(it: BZChat) {
-        val nickName = it.contact?.nickName ?: it.name
-        val lastActivity = it.getLastActivity()
-        tvUserName.setText(nickName)
-        tvLastOnline.setText(lastActivity)
-        tvUserNickname.setText(nickName)
-        tvJid.setText(it.jid)
-        AvatarHelper.placeRoundAvatar(ivAvatar, it.contact?.avatar, it.getShortName(), it.jid)
+    private fun updateUI(chatViewItem: ChatViewItem) {
+        tvUserName.text = chatViewItem.chatDto.name
+        tvLastOnline.text = chatViewItem.contactDto?.getLastActivityInfo()
+        tvUserNickname.text = chatViewItem.chatDto.name
+        tvJid.text = chatViewItem.chatDto.jid
+        AvatarHelper.placeRoundAvatar(
+            ivAvatar,
+            chatViewItem.contactDto?.avatar,
+            chatViewItem.contactDto?.getShortName(),
+            chatViewItem.chatDto.name
+        )
 
     }
 
@@ -89,7 +98,7 @@ class SingleChatInfoActivity : AppCompatActivity() {
 
     private fun routeToContactActivity() {
         val i = Intent(this, ContactAddActivity::class.java)
-        i.putExtra("JID", chatId)
+        i.putExtra(KEY_CHAT, chatDto)
         startActivity(i)
     }
 }

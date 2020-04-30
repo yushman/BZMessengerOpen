@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.amulyakhare.textdrawable.util.ColorGenerator
 import kotlinx.android.synthetic.main.muc_chat_item.view.*
 import kotlinx.android.synthetic.main.single_chat_item.view.*
 import kotlinx.android.synthetic.main.single_chat_item.view.iv_chat_avatar
@@ -15,22 +16,22 @@ import kotlinx.android.synthetic.main.single_chat_item.view.tv_chat_item_last_me
 import kotlinx.android.synthetic.main.single_chat_item.view.tv_chat_item_unread_count
 import kotlinx.android.synthetic.main.single_chat_item.view.tv_chat_item_user_name
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.bz_model.chat.BZChat
-import ooo.emessi.messenger.data.model.bz_model.message.BZMessage
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.dto_model.message.MessageDto
+import ooo.emessi.messenger.data.model.view_item_model.chat.ChatViewItem
 import ooo.emessi.messenger.utils.helpers.AvatarHelper
 import ooo.emessi.messenger.utils.humanizeDiff
-import ooo.emessi.messenger.utils.isMultiChat
-import ooo.emessi.messenger.utils.toEntityBareJid
 import java.util.*
 
-class ChatsAdapter (val listener: (BZChat) -> Unit)  : RecyclerView.Adapter<ChatsAdapter.AbstractChatsViewHolder>(){
-    var chats = listOf<BZChat>()
+class ChatsAdapter(val listener: (ChatDto) -> Unit) :
+    RecyclerView.Adapter<ChatsAdapter.AbstractChatsViewHolder>() {
+    var chats = listOf<ChatViewItem>()
 
-    val SINGLE_CHAT = 0
-    val GROUP_CHAT = 1
+    private val SINGLE_CHAT = 0
+    private val GROUP_CHAT = 1
 
     override fun getItemViewType(position: Int): Int {
-        return when (chats[position].isMulti){
+        return when (chats[position].chatDto.isMulti) {
             true -> GROUP_CHAT
             false -> SINGLE_CHAT
         }
@@ -52,7 +53,7 @@ class ChatsAdapter (val listener: (BZChat) -> Unit)  : RecyclerView.Adapter<Chat
         holder.bind(chats[position], listener)
     }
 
-    fun updateChats(_chats: List<BZChat>){
+    fun updateChats(_chats: List<ChatViewItem>){
 //        val _chats = _items.sortedBy { it.lastMessage?.timeStamp }
         val diffCallback = object : DiffUtil.Callback(){
             override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
@@ -78,7 +79,7 @@ class ChatsAdapter (val listener: (BZChat) -> Unit)  : RecyclerView.Adapter<Chat
     }
 
     abstract class AbstractChatsViewHolder(view: View): RecyclerView.ViewHolder(view){
-        abstract fun bind(chat: BZChat, listener : (BZChat) -> Unit)
+        abstract fun bind(chat: ChatViewItem, listener: (ChatDto) -> Unit)
     }
 
     inner class SingleChatsViewHolder(view: View): AbstractChatsViewHolder(view){
@@ -91,50 +92,61 @@ class ChatsAdapter (val listener: (BZChat) -> Unit)  : RecyclerView.Adapter<Chat
         val ivOnline = view.iv_chat_item_online_indicator
         val ivSended = view.iv_message_sended2
         val ivDelivered = view.iv_message_delivered2
-        val v = view
+        val v = itemView
 
 
-        override fun bind(chat: BZChat, listener : (BZChat) -> Unit) {
-            tvChatId.text = chat.contact?.nickName ?: chat.name
+        override fun bind(chat: ChatViewItem, listener: (ChatDto) -> Unit) {
+            tvChatId.text = chat.chatDto.name
             ivSended.visibility = View.GONE
             ivDelivered.visibility = View.GONE
-            if (chat.contact != null && chat.contact!!.isOnline) {
-                ivOnline.visibility = View.VISIBLE
+            if (chat.contactDto != null){
+                if (chat.contactDto!!.isOnline) {
+                    ivOnline.visibility = View.VISIBLE
+                } else {
+                    ivOnline.visibility = View.GONE
+                }
             } else {
                 ivOnline.visibility = View.GONE
             }
-            if (chat.lastMessage != null){
-                if (!chat.lastMessage!!.isIncoming && !chat.isMulti){
-                    if (chat.lastMessage!!.isSended) ivSended.visibility = View.VISIBLE
+
+            val lastMessage = chat.lastMessageViewItem?.messageDto
+            if (lastMessage != null){
+                if (!lastMessage.isIncoming){
+                    if (lastMessage.isSended) ivSended.visibility = View.VISIBLE
                     else ivSended.visibility = View.GONE
-                    if (chat.lastMessage!!.isDelivered) ivDelivered.visibility = View.VISIBLE
+                    if (lastMessage.isDelivered) ivDelivered.visibility = View.VISIBLE
                     else ivDelivered.visibility = View.GONE
                 } else {
                     ivSended.visibility = View.GONE
                     ivDelivered.visibility = View.GONE
                 }
-                var lastMessageBody = chat.lastMessage!!.body
+                var lastMessageBody = lastMessage.messageCorrectedBody ?: lastMessage.body
                 if (lastMessageBody.isEmpty()) {
-                    lastMessageBody = when (chat.lastMessage!!.payloadType){
-                        BZMessage.PayloadType.IMAGE -> "IMAGE"
-                        BZMessage.PayloadType.DOCUMENT -> "DOCUMENT"
+                    lastMessageBody = when (lastMessage.payloadType){
+                        MessageDto.PayloadType.IMAGE -> "IMAGE"
+                        MessageDto.PayloadType.FILE -> "FILE"
                         else -> ""
                     }
                 }
                 tvLastMessage.text = lastMessageBody
-                tvDate.text = Date().humanizeDiff(Date(chat.lastMessage!!.timeStamp))
+                tvDate.text = Date().humanizeDiff(Date(lastMessage.timeStamp))
             } else {
                 tvLastMessage.text = "No messages"
                 tvDate.text = ""
             }
-            val unread = chat.unreadMessages
+            val unread = chat.chatDto.unreadMessages
             if (unread == 0) tvUnreadCount.visibility = View.GONE
             else {
                 tvUnreadCount.visibility = View.VISIBLE
                 tvUnreadCount.text = unread.toString()
             }
-            v.setOnClickListener { listener.invoke(chat) }
-            AvatarHelper.placeRoundAvatar(avatarView, chat.contact?.avatar, chat.getShortName(), chat.jid)
+            v.setOnClickListener { listener.invoke(chat.chatDto) }
+            AvatarHelper.placeRoundAvatar(
+                avatarView,
+                chat.contactDto?.avatar,
+                chat.contactDto?.getShortName(),
+                chat.chatDto.name
+            )
         }
     }
 
@@ -152,48 +164,60 @@ class ChatsAdapter (val listener: (BZChat) -> Unit)  : RecyclerView.Adapter<Chat
         val v = view
 
 
-        override fun bind(chat: BZChat, listener : (BZChat) -> Unit) {
-            tvChatId.text = chat.contact?.nickName ?: chat.name
+        override fun bind(chat: ChatViewItem, listener: (ChatDto) -> Unit) {
+            tvChatId.text = chat.chatDto.name
             ivSended.visibility = View.GONE
             ivDelivered.visibility = View.GONE
             ivMultiChat.visibility = View.VISIBLE
-            if (chat.lastMessage != null){
+            val lastMessage = chat.lastMessageViewItem
+            if (lastMessage != null){
                 tvFrom.visibility = View.VISIBLE
-                tvFrom.text =
+
                     //Change on CgatItem Impl
-                    if (chat.lastMessage!!.isIncoming) chat.lastMessage!!.from
-                    else "Вы"
-                if (!chat.lastMessage!!.isIncoming){
-                    if (chat.lastMessage!!.isSended) ivSended.visibility = View.VISIBLE
+                    if (lastMessage.messageDto.isIncoming) {
+                        tvFrom.text = lastMessage.getContactName()
+                        tvFrom.setTextColor(ColorGenerator.MATERIAL.getColor(lastMessage.getContactName()))
+                    }
+                    else {
+                        tvFrom.text = "Вы"
+                        tvFrom.setTextColor(v.resources.getColor(R.color.color_text_dk_gray))
+                    }
+                if (!lastMessage.messageDto.isIncoming){
+                    if (lastMessage.messageDto.isSended) ivSended.visibility = View.VISIBLE
                     else ivSended.visibility = View.GONE
-                    if (chat.lastMessage!!.isDelivered) ivDelivered.visibility = View.VISIBLE
+                    if (lastMessage.messageDto.isDelivered) ivDelivered.visibility = View.VISIBLE
                     else ivDelivered.visibility = View.GONE
                 } else {
                     ivSended.visibility = View.GONE
                     ivDelivered.visibility = View.GONE
                 }
-                var lastMessageBody = chat.lastMessage!!.body
+                var lastMessageBody = lastMessage.body
                 if (lastMessageBody.isEmpty()) {
-                    lastMessageBody = when (chat.lastMessage!!.payloadType){
-                        BZMessage.PayloadType.IMAGE -> "IMAGE"
-                        BZMessage.PayloadType.DOCUMENT -> "DOCUMENT"
+                    lastMessageBody = when (lastMessage.messageDto.payloadType){
+                        MessageDto.PayloadType.IMAGE -> "IMAGE"
+                        MessageDto.PayloadType.FILE -> "FILE"
                         else -> ""
                     }
                 }
                 tvLastMessage.text = lastMessageBody
-                tvDate.text = Date().humanizeDiff(Date(chat.lastMessage!!.timeStamp))
+                tvDate.text = Date().humanizeDiff(Date(lastMessage.messageDto.timeStamp))
             } else {
                 tvLastMessage.text = "No messages"
                 tvDate.text = ""
             }
-            val unread = chat.unreadMessages
+            val unread = chat.chatDto.unreadMessages
             if (unread == 0) tvUnreadCount.visibility = View.GONE
             else {
                 tvUnreadCount.visibility = View.VISIBLE
                 tvUnreadCount.text = unread.toString()
             }
-            v.setOnClickListener { listener.invoke(chat) }
-            AvatarHelper.placeRoundAvatar(avatarView, chat.contact?.avatar, chat.getShortName(), chat.jid)
+            v.setOnClickListener { listener.invoke(chat.chatDto) }
+            AvatarHelper.placeRoundAvatar(
+                avatarView,
+                chat.contactDto?.avatar,
+                chat.contactDto?.getShortName(),
+                chat.chatDto.jid
+            )
         }
     }
 }

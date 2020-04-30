@@ -9,7 +9,7 @@ object KeyboardHelper {
     fun showKeyboard(et: EditText, ctx: Context){
         et.requestFocus()
         val imm = ctx.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT, 0)
+        imm.showSoftInput(et, InputMethodManager.SHOW_IMPLICIT)
     }
 
     fun hideKeyboard(et: EditText, ctx: Context){

@@ -15,11 +15,6 @@ import androidx.lifecycle.ViewModelProviders
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.android.synthetic.main.activity_login.*
-import kotlinx.android.synthetic.main.activity_login.et_password
-import kotlinx.android.synthetic.main.activity_login.et_password_wrapper
-import kotlinx.android.synthetic.main.activity_login.et_user
-import kotlinx.android.synthetic.main.activity_login.et_user_wrapper
-import kotlinx.android.synthetic.main.activity_login_old.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -27,8 +22,8 @@ import kotlinx.coroutines.launch
 import ooo.emessi.messenger.R
 import ooo.emessi.messenger.service.BZChatService
 import ooo.emessi.messenger.ssl.SslApi
-import ooo.emessi.messenger.utils.jidIsValid
 import ooo.emessi.messenger.ui.viewmodels.LoginActivityViewModel
+import ooo.emessi.messenger.utils.jidIsValid
 
 
 class LoginActivity : AppCompatActivity() {
@@ -199,7 +194,7 @@ class LoginActivity : AppCompatActivity() {
 
     private fun startMainActivity() {
 
-        val i = Intent(this, MainActivity::class.java)
+        val i = Intent(this, NewMainActivity::class.java)
         startActivity(i)
         finish()
     }

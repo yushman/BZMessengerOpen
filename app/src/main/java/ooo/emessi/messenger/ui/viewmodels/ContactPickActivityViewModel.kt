@@ -1,38 +1,29 @@
 package ooo.emessi.messenger.ui.viewmodels
 
-import androidx.lifecycle.ViewModel
-import ooo.emessi.messenger.data.model.wrapped_model.ContactPickItem
 import ooo.emessi.messenger.controllers.ContactPickController
-import org.koin.core.KoinComponent
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
 
-class ContactPickActivityViewModel : ViewModel(), KoinComponent{
-    private val contactPickManager =
-        ContactPickController()
-
-    var contacts = contactPickManager.contactsW
-    var selectedContacts = contactPickManager.selectedContact
+class ContactPickActivityViewModel : AbstractContactListViewModel(){
+    override val contactListController = ContactPickController()
+    val contactPickItems = contactListController.contactPickViewItems
+    val selectedContacts = contactListController.selectedContacts
 
     fun handlePickContact(jid: String){
-        contactPickManager.handlePickContact(jid)
+        contactListController.handlePickContact(jid)
     }
 
     fun handleUnpickContact(jid: String) {
-        contactPickManager.handleUnpickContact(jid)
+        contactListController.handleUnpickContact(jid)
     }
 
     fun addContactToChat(
-        chatId: String,
-        selectedList: List<ContactPickItem>
+        chatDto: ChatDto
     ) {
-        contactPickManager.addContactToChat(chatId, selectedList)
+        contactListController.addContactToChat(chatDto)
     }
 
     fun createNewChat(name: String) {
-        contactPickManager.createNewChat(name)
-    }
-
-    fun loadContacts() {
-        contactPickManager.loadContacts()
+        contactListController.createNewChat(name)
     }
 
 }

@@ -12,7 +12,6 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -22,16 +21,22 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.r0adkll.slidr.Slidr
 import ooo.emessi.messenger.BuildConfig
 import ooo.emessi.messenger.R
 import ooo.emessi.messenger.constants.Constants
-import ooo.emessi.messenger.data.model.bz_model.chat.BZChat
-import ooo.emessi.messenger.data.model.bz_model.message.BZMessage
-import ooo.emessi.messenger.data.model.wrapped_model.MessageItem
+import ooo.emessi.messenger.constants.Constants.FORWARDED_MESSAGE_ID
+import ooo.emessi.messenger.constants.Constants.KEY_CHAT
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.dto_model.message.MessageDto
+import ooo.emessi.messenger.data.model.view_item_model.chat.ChatViewItem
+import ooo.emessi.messenger.data.model.view_item_model.message.MessageListViewItem
+import ooo.emessi.messenger.data.model.view_item_model.message.MessageViewItemContent
+import ooo.emessi.messenger.ui.adapters.MessageItemTouchHelperCallback
 import ooo.emessi.messenger.ui.adapters.MessagesAdapter
 import ooo.emessi.messenger.ui.fragments.BottomAttachDialogFragment
 import ooo.emessi.messenger.ui.fragments.BottomMessageActionFragment
@@ -66,7 +71,7 @@ class MucLightChatActivity : AppCompatActivity() {
     private lateinit var tvMessageActionText: TextView
     private lateinit var tvMessageActionDescription: TextView
 
-    private var chatId: String = ""
+    private lateinit var chatDto: ChatDto
     var currentCameraPicturePath = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,9 +85,6 @@ class MucLightChatActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        Log.d(TAG, requestCode.toString())
-        Log.d(TAG, resultCode.toString())
-        Log.d(TAG, data.toString())
         if (resultCode == Activity.RESULT_OK) {
             when(requestCode){
                 FILE_PICKER_REQUEST_CODE, IMAGE_PICKER_REQUEST_CODE -> {
@@ -116,6 +118,12 @@ class MucLightChatActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
+    override fun onResume() {
+        chatViewModel.flushUnread()
+        chatViewModel.loadChatInfo()
+        super.onResume()
+    }
+
     override fun onPause() {
         chatViewModel.flushUnread()
         super.onPause()
@@ -142,7 +150,7 @@ class MucLightChatActivity : AppCompatActivity() {
     }
 
     private fun chatClearHistoryClick() {
-        chatViewModel.clearHistory()
+        chatViewModel.clearChatHistory()
     }
 
     private fun chatInfoClick() {
@@ -151,7 +159,7 @@ class MucLightChatActivity : AppCompatActivity() {
 
     private fun routeToChatInfoActivity() {
         val i = Intent(this, MuclightChatInfoActivity::class.java)
-        i.putExtra("JID", chatId)
+        i.putExtra(KEY_CHAT, chatDto)
         startActivity(i)
     }
 
@@ -161,8 +169,7 @@ class MucLightChatActivity : AppCompatActivity() {
             val bundle: Bundle? = intent.extras
 
             if (bundle != null) {
-                chatId = bundle.getString("JID", null)
-
+                chatDto = bundle.getParcelable<ChatDto>(KEY_CHAT)!!
             }
         } catch (ex: Exception) {
             Log.d(TAG, ex.toString())
@@ -171,15 +178,11 @@ class MucLightChatActivity : AppCompatActivity() {
     }
 
     private fun initViewModel() {
-        chatViewModel = ViewModelProviders.of(this, ChatViewModelFactory(chatId)).get(MucLightChatActivityViewModel::class.java)
+        chatViewModel = ViewModelProvider(this, ChatViewModelFactory(chatDto)).get(MucLightChatActivityViewModel::class.java)
         chatViewModel.messageItems.observe(this, Observer { messagesAdapter.updateMessages(it)
             if (messagesAdapter.itemCount != 0) {recyclerView.scrollToPosition(messagesAdapter.itemCount - 1)}
         })
-//        chatViewModel.newMessage.observe(this, Observer {
-//            messagesAdapter.newMessage(it)
-//            //recyclerView.smoothScrollToPosition(messagesAdapter.itemCount - 1)
-//        })
-        chatViewModel.chat.observe(this, Observer { updateUI(it)})
+        chatViewModel.chatViewItem.observe(this, Observer { updateUI(it)})
         chatViewModel.messageSended.observe(this, Observer { playSendSound(it) })
     }
 
@@ -207,10 +210,10 @@ class MucLightChatActivity : AppCompatActivity() {
         etInput.isFocusableInTouchMode = true
         etInput.showSoftInputOnFocus = true
 
-        tvChatName.text = chatId
+        tvChatName.text = chatDto.name
 //        AvatarHelper.placeRoundRectAvatar(ivAvatar, null, chatId.capitalize().removeRange(2, chatId.length), chatId)
 
-        messagesAdapter = MessagesAdapter{messsage, isEditable -> showMessageActionDialog(messsage, isEditable)}
+        messagesAdapter = MessagesAdapter{ v, message -> showMessageActionDialog(v, message)}
 
         val lm = LinearLayoutManager(this)
         //lm.reverseLayout = true
@@ -220,6 +223,9 @@ class MucLightChatActivity : AppCompatActivity() {
         recyclerView.adapter = messagesAdapter
         recyclerView.itemAnimator = null
 
+        val touchCallback = MessageItemTouchHelperCallback(messagesAdapter) { replySwipe(it) }
+        val touchHelper = ItemTouchHelper(touchCallback)
+        touchHelper.attachToRecyclerView(recyclerView)
 
         btnSend.setOnClickListener { sendMessage() }
         btnAttach.setOnClickListener { showBottomAttachDialog() }
@@ -234,9 +240,11 @@ class MucLightChatActivity : AppCompatActivity() {
 
     }
 
-    private fun updateUI(it: BZChat) {
-        tvChatName.text = it.name
-        AvatarHelper.placeRoundAvatar(ivAvatar, it.contact?.avatar, it.getShortName(), it.jid)
+    private fun updateUI(chatViewItem: ChatViewItem) {
+        tvChatName.text = chatViewItem.chatDto.name
+        chatViewItem.contactDto?.let {
+            AvatarHelper.placeRoundAvatar(ivAvatar, it.avatar, it.getShortName(), it.contactJid)
+        }
     }
 
     private fun setBtnSendEnabled(b: Boolean) {
@@ -260,13 +268,13 @@ class MucLightChatActivity : AppCompatActivity() {
         flushMessageActions()
     }
 
-    private fun showMessageActionDialog(it: MessageItem, isEditable: Boolean) {
+    private fun showMessageActionDialog(v: View, message: MessageViewItemContent.MessageItem) {
         KeyboardHelper.hideKeyboard(etInput, this)
-        val bsf = BottomMessageActionFragment(it.message, isEditable){view -> proceedMessageAction(view, it.message)}
+        val bsf = BottomMessageActionFragment(message.message.messageDto, message.isEditable) {view -> proceedMessageAction(view, message.message.messageDto)}
         bsf.show(supportFragmentManager, bsf.tag)
     }
 
-    private fun proceedMessageAction(view: View, it: BZMessage) {
+    private fun proceedMessageAction(view: View, it: MessageDto) {
         when (view.id){
             R.id.tv_reply_message_action -> replyClick(it)
             R.id.tv_forward_message_action -> forwardClick(it)
@@ -276,8 +284,8 @@ class MucLightChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun editClick (it: BZMessage){
-        if (it.payloadType == BZMessage.PayloadType.NONE){
+    private fun editClick(it: MessageDto) {
+        if (it.payloadType == MessageDto.PayloadType.NONE) {
             layoutMessageAction.visibility = View.VISIBLE
             tvMessageActionDescription.text = "Edit"
             tvMessageActionText.text = it.body
@@ -291,25 +299,27 @@ class MucLightChatActivity : AppCompatActivity() {
             KeyboardHelper.showKeyboard(etInput, this)
         }
     }
-    private fun copyClick (it: BZMessage){
-        if (it.payloadType == BZMessage.PayloadType.NONE) {
+
+    private fun copyClick(it: MessageDto) {
+        if (it.payloadType == MessageDto.PayloadType.NONE) {
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clipData = ClipData.newPlainText(Constants.CLIP_LABEL, it.body)
             clipboardManager.setPrimaryClip(clipData)
         }
     }
-    private fun deleteClick (it: BZMessage){
+
+    private fun deleteClick(it: MessageDto) {
         chatViewModel.deleteMessage(it)
     }
 
-    private fun forwardClick(it: BZMessage) {
+    private fun forwardClick(it: MessageDto) {
         val i = Intent(this, NewMainActivity::class.java)
-        i.putExtra("FORWARDED_MESSAGE_ID", it.id)
+        i.putExtra(FORWARDED_MESSAGE_ID, it.id)
         startActivity(i)
         finish()
     }
 
-    private fun replyClick(it: BZMessage) {
+    private fun replyClick(it: MessageDto) {
         layoutMessageAction.visibility = View.VISIBLE
         tvMessageActionDescription.text = it.from
         tvMessageActionText.text = it.body
@@ -318,6 +328,12 @@ class MucLightChatActivity : AppCompatActivity() {
         etInput.setSelection(0)
         chatViewModel.setReplyedMessage(it)
         KeyboardHelper.showKeyboard(etInput, this)
+    }
+
+    private fun replySwipe(it: MessageListViewItem) {
+        val messageContent = it.content as MessageViewItemContent.MessageItem
+        SoundHelper.vibrate(this)
+        replyClick(messageContent.message.messageDto)
     }
 
     private fun showBottomAttachDialog() {
@@ -364,10 +380,10 @@ class MucLightChatActivity : AppCompatActivity() {
         chatViewModel.sendAttachments(docPaths)
     }
 
-    private fun playSendSound(it: Boolean) {
-        if (!it) return
+    private fun playSendSound(message: MessageDto) {
+        if (!message.isSended) return
         SoundHelper.playSendSound(this)
-        chatViewModel.flushMessageSended()
+        SoundHelper.vibrate(this)
     }
 
     private fun flushMessageActions() {

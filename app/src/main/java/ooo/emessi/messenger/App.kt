@@ -7,6 +7,7 @@ import ooo.emessi.messenger.di.myModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import timber.log.Timber
 
 class App : Application(){
 
@@ -19,11 +20,11 @@ class App : Application(){
 
         startKoin {
             androidLogger()
-            // declare used Android context
             androidContext(this@App)
-            // declare modules
             modules(myModule)
         }
+
+        Timber.plant(Timber.DebugTree())
 
     }
 
@@ -38,9 +39,5 @@ class App : Application(){
             return applicationContext().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
         }
 
-    }
-
-    init {
-        ooo.emessi.messenger.App.Companion.instance = this
     }
 }

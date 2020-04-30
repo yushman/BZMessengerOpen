@@ -27,17 +27,22 @@
         android:name=".App"
         android:allowBackup="false"
         android:appCategory="social"
-        android:icon="@mipmap/ic_flash"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_flash_round"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
-        tools:replace="android:allowBackup">
+        android:requestLegacyExternalStorage="true"
+        tools:replace="android:allowBackup"
+        tools:targetApi="q">
+        <activity android:name=".ui.activities.ForwardMessageActivity"></activity>
+        <activity android:name=".ui.activities.SettingsActivity" />
+
         <service
             android:name=".service.receiver.DownloadService"
             android:enabled="true"
-            android:exported="false"></service>
+            android:exported="false" />
 
         <activity android:name=".ui.activities.MessageForwardActivity" />
         <activity android:name=".ui.activities.ContactAddActivity" />
@@ -52,23 +57,6 @@
                 android:resource="@xml/file_paths"
                 tools:replace="android:resource" />
         </provider>
-
-        <receiver
-            android:name=".service.receiver.ConnectionReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="ooo.emessi.messenger.action.CONNECTION" />
-            </intent-filter>
-        </receiver>
-        <receiver
-            android:name=".service.receiver.MessageReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="ooo.emessi.messenger.action.NEW_MESSAGE" />
-            </intent-filter>
-        </receiver>
 
         <service
             android:name=".service.ConnectionService"
@@ -95,7 +83,7 @@
             -->
             <meta-data
                 android:name="com.google.firebase.messaging.default_notification_icon"
-                android:resource="@drawable/ic_chat_black_24dp" />
+                android:resource="@drawable/ic_chat_white_24dp" />
             <!--
                  Set color used with incoming notification messages. This is used when no color is set for the incoming
                  notification message. See README(https://goo.gl/6BKBk7) for more.
@@ -108,25 +96,37 @@
                 android:value="@string/default_notification_channel_id" />
         </service>
 
-        <activity android:name=".ui.activities.NewMainActivity" />
-        <activity android:name=".ui.activities.LoginOldActivity" />
-        <activity android:name=".ui.activities.ContactPickActivity" />
-        <activity android:name=".ui.activities.ContactSelectActivity" />
-        <activity android:name=".ui.activities.SingleChatInfoActivity" />
-        <activity android:name=".ui.activities.MuclightChatInfoActivity" />
+        <activity
+            android:name=".ui.activities.NewMainActivity"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".ui.activities.LoginOldActivity"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".ui.activities.ContactPickActivity"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".ui.activities.ContactSelectActivity"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".ui.activities.SingleChatInfoActivity"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".ui.activities.MuclightChatInfoActivity"
+            android:launchMode="singleTop" />
         <activity
             android:name=".ui.activities.MucLightChatActivity"
+            android:launchMode="singleTop"
             android:theme="@style/AppTheme.Transparent"
             android:windowSoftInputMode="stateVisible|adjustResize" />
         <activity
-            android:name=".ui.activities.ContactActivity"
-            android:theme="@style/AppTheme.Transparent" />
-        <activity
             android:name=".ui.activities.SingleChatActivity"
+            android:launchMode="singleTop"
             android:theme="@style/AppTheme.Transparent"
             android:windowSoftInputMode="stateVisible|adjustResize" />
         <activity
             android:name=".ui.activities.SplashActivity"
+            android:launchMode="singleTop"
             android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -135,9 +135,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ui.activities.MainActivity"
-            android:launchMode="singleTop" />
         <activity
             android:name=".ui.activities.LoginActivity"
             android:launchMode="singleTop"

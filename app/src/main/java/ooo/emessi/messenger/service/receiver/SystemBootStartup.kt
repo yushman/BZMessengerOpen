@@ -3,7 +3,7 @@ package ooo.emessi.messenger.service.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import ooo.emessi.messenger.managers.AccountManager
+import ooo.emessi.messenger.managers.account.AccountManager
 import ooo.emessi.messenger.service.ConnectionService
 import org.koin.core.KoinComponent
 import org.koin.core.get

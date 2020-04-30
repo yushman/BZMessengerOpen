@@ -3,28 +3,24 @@ package ooo.emessi.messenger.service
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import android.util.Log
-import android.util.Log.d
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import ooo.emessi.messenger.IOScope
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.controllers.ChatListController
-import ooo.emessi.messenger.data.repo.ChatRepo
-import ooo.emessi.messenger.managers.*
+import ooo.emessi.messenger.constants.Constants
+import ooo.emessi.messenger.managers.message.MessageReciever
+import ooo.emessi.messenger.managers.roster.RosterManager
 import ooo.emessi.messenger.utils.helpers.LogHelper
-import ooo.emessi.messenger.utils.helpers.NotifyHelper
-import ooo.emessi.messenger.xmpp.XMPPConnectionApi
+import ooo.emessi.messenger.xmpp.XMPPApi
+import ooo.emessi.messenger.xmpp.connection.ConnectionState
 import org.jivesoftware.smack.packet.*
-import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.koin.core.KoinComponent
 import org.koin.core.get
+import timber.log.Timber
 import java.util.*
 
 class BZChatService : Service(), KoinComponent {
-    companion object{
+    companion object {
 
         const val ACTION = "ACTION"
         const val ACTION_LOAD_ROSTER = "ACTION_LOAD_ROSTER"
@@ -40,97 +36,93 @@ class BZChatService : Service(), KoinComponent {
 
         const val SELF_MESSEGING = true //Accept of receiving messeges, sended by myself
     }
-    private val TAG = this.javaClass.simpleName
-    private lateinit var connection: XMPPTCPConnection
 
+    private val xmppApi = get<XMPPApi>()
+    private val ioScope = get<IOScope>()
+    private val rosterManager = get<RosterManager>()
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
 
     override fun onCreate() {
-        Log.d("Service", "created")
-        if (!XMPPConnectionApi.isInitialized) stopSelf()
-        connection = XMPPConnectionApi.getConnection()
-        val nh = NotifyHelper(this)
-        startForeground(NotifyHelper.NOTIFICATION_ID_FOREGROUND, nh.createForegroundNotification())
-        firstStart()
-        super.onCreate()
-
+        Timber.d("servise created")
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        Log.d("Service", "s")
-//        initRoster()
-        val action = intent.action
-//        when (action) {
-//            null -> initRoster()
-//            ACTION_LOAD_ROSTER -> initRoster()
-//        }
-
-//            initChatManager()
-//            initMucManager()
-//        return START_STICKY
-        return super.onStartCommand(intent, flags, startId)
-    }
-
-    private fun firstStart() = CoroutineScope(Dispatchers.Main).launch {
-                registerFBToken()
-        LogHelper.appendLog(TAG + ":" + Date() +  "Log Start")
-        connection.addAsyncStanzaListener(
-            { packet -> doStanza(packet) },
-            { stanza -> stanzaFilter(stanza)})
-//        connection.addStanzaSendingListener(
-//            {packet: Stanza? -> doSendedStanza(packet) },
-//            {stanza: Stanza? -> stanza is Message }
-//        )
-        XMPPConnectionApi.getDeliveryReceiptManager().addReceiptReceivedListener { fromJid, toJid, receiptId, receipt ->
-            MessagesManager(fromJid.asEntityBareJidIfPossible().asEntityBareJidString()).receiveDeliveryReceipt(receiptId)
+        Timber.d("servise start command")
+        when (intent.action) {
+            Constants.ACTION_DO_CONNECT -> doConnect(intent)
+            Constants.ACTION_DO_LOGIN -> doLogin(intent)
+            Constants.ACTION_DO_CONNECT_LOGIN -> doConnectAndLogin(intent)
+            Constants.ACTION_DO_LOGOUT -> doLogout(intent)
         }
-        initRoster()
+        return START_STICKY
     }
 
-    private fun stanzaFilter(stanza: Stanza): Boolean{
-        d(TAG, stanza.hasExtension("bzm:media:1").toString())
-        return when (stanza){
-            is Message -> (!stanza.body.isNullOrEmpty()) || (stanza.hasExtension("bzm:media:1"))
-            is Presence -> true
-            is IQ -> false
-            else -> false
+    private fun doLogout(intent: Intent) {
+        xmppApi.reconnect()
+    }
+
+    private fun doConnect(intent: Intent) {
+        xmppApi.connect { onConnectionStateChanged(it) }
+    }
+
+    private fun doLogin(intent: Intent) {
+        intent.extras?.let {
+            val user = it.getString("USER")
+            val password = it.getString("PASSWORD")
+            xmppApi.login(user!!, password!!)
         }
     }
 
-//    private fun doSendedStanza(packet: Stanza?) {
-//        if (packet != null) MessagesManager.messageSended(packet)
-//    }
+    private fun doConnectAndLogin(intent: Intent) {
+        intent.extras?.let {
+            val user = it.getString("USER")
+            val password = it.getString("PASSWORD")
+            xmppApi.connect { onConnectionStateChanged(it) }
+            xmppApi.login(user!!, password!!)
+        }
+    }
 
-    private fun registerFBToken() = CoroutineScope(Dispatchers.IO).launch {
+    private fun onAuthenticated(state: ConnectionState) {
+        if (state.isLoggedin && !state.isResumed) firstStart()
+        val i = Intent(Constants.ACTION_LOGIN_STATUS)
+        i.putExtra(Constants.EXTRAS_LOGIN_STATUS, state.isLoggedin)
+        i.putExtra("USER", state.user)
+        i.putExtra("HOST", state.host)
+        i.putExtra("PASSWORD", state.password)
+        sendBroadcast(i)
+    }
+
+    private fun onConnectionStateChanged(state: ConnectionState) {
+        if (state.isLoggedin) onAuthenticated(state)
+    }
+
+    private fun firstStart() {
+        LogHelper.appendLog("SERVICE" + ":" + Date() + "Log Start")
+        Timber.i("first start")
+        xmppApi.setupStanzaListener { doStanza(it) }
+        xmppApi.setupDeliveryListener { fromJid, toJid, receiptId, receipt -> }
+        registerFBToken()
+        rosterManager.updateChatsFromRoster()
+    }
+
+    private fun registerFBToken() {
         FirebaseInstanceId.getInstance().instanceId
-            .addOnCompleteListener(OnCompleteListener { task ->
+            .addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
-                    Log.w(TAG, "getInstanceId failed", task.exception)
-                    return@OnCompleteListener
+                    Timber.d("getInstanceId failed" + task.exception)
                 }
-
                 // Get new Instance ID token
                 val token = task.result?.token
                 if (token != null) {
-                    val pubSubManager = PubSubManager(token)
-                    pubSubManager.sendPushDiscoverIq()
+                    xmppApi.registerFBToken(token)
                 }
-
-
                 // Log and toast
                 val msg = getString(R.string.msg_token_fmt, token)
-                Log.d(TAG, msg)
-            })
-    }
-
-    private fun initRoster() = CoroutineScope(Dispatchers.Main).launch{
-//        ContactsManager.loadContactsFromRoaster()
-        val chatListManager =
-            ChatListController()
-        chatListManager.loadChatsFromRoster()
+                Timber.d(msg)
+            }
     }
 
     private fun doStanza(it: Stanza?) {
@@ -149,7 +141,6 @@ class BZChatService : Service(), KoinComponent {
     }
 
     private fun showError(error: StanzaError) {
-//        Toast.makeText(this, error.condition.toString(), Toast.LENGTH_LONG).show()
         val i = Intent(this, NotificationService::class.java)
         i.putExtra(ACTION, ACTION_ERROR)
         i.putExtra(MESSAGE_FROM_JID, error.type.toString())
@@ -157,30 +148,32 @@ class BZChatService : Service(), KoinComponent {
         startService(i)
     }
 
-    private fun changePresence(it: Presence) {
-        val contactsManager = ContactsManager()
-        contactsManager.presenceChanged(it)
+    private fun changePresence(presence: Presence) {
+        rosterManager.presenceChanged(presence)
     }
 
     private fun receiveMessage(it: Message) {
-        d(TAG, it.body)
+        Timber.i("receiveMessage")
+        Timber.d(it.body)
+//        if (it.body.isNullOrEmpty() && it.hasExtension("media", "bzm:media:1")) it.body =
+//            "Picture"
         val acceptSelfMessages = SELF_MESSEGING //Accept of receiving messeges, sended by myself
-        if (!acceptSelfMessages && it.from.asEntityFullJidIfPossible() == XMPPConnectionApi.getMyJid()) return
-        if (it.from.resourceOrEmpty.toString() == XMPPConnectionApi.getMyJid().asEntityBareJidIfPossible().toString()) return
+        if (!acceptSelfMessages && it.from.asEntityFullJidIfPossible() == xmppApi.getMyJid()) return
+        if (it.from.resourceOrEmpty.toString() == xmppApi.getMyJid()
+                .asEntityBareJidIfPossible().toString()
+        ) return
         if (it.type == Message.Type.error) {
             showError(it.error)
         } else {
             showMessage(it)
-            MessageReciever(it).recieve()
+            ioScope.launch { MessageReciever(it, xmppApi.getMyJid().asEntityBareJidString()).recieve() }
         }
     }
 
-    private fun showMessage(it: Message) = CoroutineScope(Dispatchers.IO).launch {
+    private fun showMessage(it: Message) {
         val i = Intent(this@BZChatService, NotificationService::class.java)
-        val chatRepo: ChatRepo = get()
         val chatJid = it.from.asEntityBareJidIfPossible().toString()
-        val chatName = chatRepo.getChatById(it.from.asEntityBareJidIfPossible().toString())?.name
-            ?: chatJid
+        val chatName = chatJid
 
         i.putExtra(ACTION, ACTION_MESSAGE)
         i.putExtra(MESSAGE_FROM_JID, chatJid)
@@ -190,7 +183,7 @@ class BZChatService : Service(), KoinComponent {
     }
 
     override fun onDestroy() {
-        stopForeground(true)
+        xmppApi.disconnect()
         super.onDestroy()
     }
 
@@ -223,7 +216,6 @@ class BZChatService : Service(), KoinComponent {
 //            MessagesManager.receiveGroupChatMessage(message, chat)
 //        }
 //    }
-
 
 
 }

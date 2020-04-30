@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="color_primary">#039BE5</color>
-    <color name="color_primary_dark">#01579B</color>
-    <color name="color_primary_light">#473770</color>
+    <color name="color_primary">#63A0C7</color>
+    <color name="color_primary_dark">#3E688D</color>
+    <color name="color_primary_light">#4DD0E1</color>
     <color name="color_accent">#039BE5</color>
     <color name="color_accent_secondary">#254A74</color>
     <color name="color_chip_primary">#4FC3F7</color>
@@ -10,17 +10,19 @@
     <color name="color_gray_dark">#6F6D77</color>
     <color name="color_gray_light">#ECECEC</color>
     <color name="color_bg_light">#FEFEFE</color>
-    <color name="color_bg_their_message">#ECECEC</color>
-    <color name="color_bg_my_message">#E8EAF6</color>
+    <color name="color_bg_their_message">#FFFFFF</color>
+    <color name="color_bg_my_message">#F6F9FF</color>
     <color name="color_fab_new_single_chat">#00B8D4</color>
     <color name="color_fab_new_muc_chat">#7986CB</color>
     <color name="color_bg_unread_messages">#673AB7</color>
     <color name="color_fab_primary">#F7C331</color>
     <color name="color_fab_secondary">#DCC7AA</color>
     <color name="color_fab_third">#E57373</color>
-    <color name="color_online_indicator">#00B8D4</color>
+    <color name="color_online_indicator">#81C784</color>
 
     <color name="color_divider_dark">#1F000000</color>
     <color name="color_divider_light">#1FFFFFFF</color>
     <color name="color_green">#64DD17</color>
+
+    <color name="color_text_dk_gray">#202020</color>
 </resources>

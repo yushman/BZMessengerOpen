@@ -7,20 +7,31 @@
     android:clipToPadding="false"
     android:gravity="end"
     android:orientation="horizontal"
-    android:paddingVertical="2dp"
+
     android:paddingStart="80dp"
-    android:paddingEnd="15dp">
+    android:paddingEnd="8dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/relativeLayout3"
+        android:id="@+id/lt_message_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
         android:layout_marginBottom="2dp"
-        android:background="@drawable/my_message"
         android:elevation="1dp"
+        android:background="@drawable/my_message"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
+        <include
+            android:id="@+id/include3"
+            layout="@layout/include_reply_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/iv_payload_message_item"
@@ -34,7 +45,7 @@
             android:scaleType="fitCenter"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/include3"
             tools:srcCompat="@tools:sample/avatars" />
 
         <TextView
@@ -49,7 +60,7 @@
             android:paddingEnd="8dp"
             android:singleLine="true"
             android:text="saasasdasdasd"
-            android:textColor="@color/color_primary_dark"
+            android:textColor="@android:color/black"
             android:textSize="16sp"
             app:layout_constrainedWidth="true"
             app:layout_constraintBottom_toTopOf="@+id/tv_my_time"
@@ -82,6 +93,19 @@
             tools:visibility="visible" />
 
         <ImageView
+            android:id="@+id/iv_message_edited"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginEnd="2dp"
+            android:tint="@color/color_accent_secondary"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/tv_my_time"
+            app:layout_constraintEnd_toStartOf="@+id/tv_my_time"
+            app:layout_constraintTop_toTopOf="@+id/tv_my_time"
+            app:srcCompat="@drawable/ic_edit_gray_24dp"
+            tools:visibility="visible" />
+
+        <ImageView
             android:id="@+id/iv_message_delivered"
             android:layout_width="12dp"
             android:layout_height="12dp"
@@ -91,6 +115,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:srcCompat="@drawable/ic_check_black_24dp"
             tools:visibility="visible" />
+
         <ImageView
             android:id="@+id/iv_message_waiting"
             android:layout_width="12dp"

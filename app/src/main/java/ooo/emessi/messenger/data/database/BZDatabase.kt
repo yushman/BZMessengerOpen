@@ -4,24 +4,23 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
-import ooo.emessi.messenger.data.model.bz_model.account.BZAccount
-import ooo.emessi.messenger.data.model.bz_model.attachment.ABZAttachment
-import ooo.emessi.messenger.data.model.bz_model.attachment.BZAttachment
-import ooo.emessi.messenger.data.model.bz_model.chat.BZChat
-import ooo.emessi.messenger.data.model.bz_model.contact.BZContact
-import ooo.emessi.messenger.data.model.bz_model.message.BZMessage
+import ooo.emessi.messenger.data.model.dto_model.account.AccountDto
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.dto_model.contact.ContactDto
+import ooo.emessi.messenger.data.model.dto_model.message.MessageDto
 
 @Database(entities = [
 
     //insert new entities
-    BZAccount::class,
-    BZChat::class,
-    BZMessage::class,
-    BZContact::class,
-    BZAttachment::class
-], version = 2)
+    AccountDto::class,
+    ChatDto::class,
+    MessageDto::class,
+    ContactDto::class
+], version = 1)
+
+//    GOOD BD DISPATCHER
+//    val dbDispatcher = CoroutineScope(Dispatchers.IO)
+//    fun job(f:() -> Unit) = dbDispatcher.launch { f() }
 
 abstract class BZDatabase : RoomDatabase() {
 
@@ -31,23 +30,10 @@ abstract class BZDatabase : RoomDatabase() {
     abstract fun chatDao(): ChatDao
     abstract fun messageDao(): MessageDao
     abstract fun contactDao(): ContactDao
-    abstract fun attachmentDao(): AttachmentDao
 
     companion object {
         @Volatile
         private var INSTANCE: BZDatabase? = null
-
-        val MIGRATION_1_2 = object: Migration(1,2){
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("ALTER TABLE chats ADD COLUMN message_replyed_id TEXT DEFAULT null")
-                database.execSQL("ALTER TABLE chats ADD COLUMN message_replyed_from TEXT DEFAULT null")
-                database.execSQL("ALTER TABLE chats ADD COLUMN message_replyed_body TEXT DEFAULT null")
-                database.execSQL("ALTER TABLE messages ADD COLUMN message_replyed_id TEXT DEFAULT null")
-                database.execSQL("ALTER TABLE messages ADD COLUMN message_replyed_from TEXT DEFAULT null")
-                database.execSQL("ALTER TABLE messages ADD COLUMN message_replyed_body TEXT DEFAULT null")
-            }
-
-        }
 
         fun getInstance(context: Context): BZDatabase {
             val tempInstance = INSTANCE
@@ -60,7 +46,6 @@ abstract class BZDatabase : RoomDatabase() {
                     BZDatabase::class.java,
                     "BZ_database"
                 )
-                    .addMigrations(MIGRATION_1_2)
                     .build()
                 INSTANCE = instance
                 return instance

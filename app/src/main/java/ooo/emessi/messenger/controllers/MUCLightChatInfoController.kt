@@ -1,32 +1,34 @@
 package ooo.emessi.messenger.controllers
 
-import androidx.lifecycle.LiveData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import ooo.emessi.messenger.data.model.bz_model.muc_affiliation.BZMucAffiliation
-import ooo.emessi.messenger.managers.MucChatManager
-import org.koin.core.KoinComponent
-import org.koin.core.inject
-import org.koin.core.parameter.parametersOf
+import androidx.lifecycle.MutableLiveData
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.dto_model.muc_affiliation.MucAffiliationDto
+import ooo.emessi.messenger.data.model.view_item_model.MucAffiliationViewMaker
+import ooo.emessi.messenger.data.model.view_item_model.muc_affiliation.MucAffiliationViewItem
+import ooo.emessi.messenger.managers.chat.MucChatManager
+import org.jivesoftware.smackx.muclight.MUCLightAffiliation
 
-class MUCLightChatInfoController (val chatId: String): KoinComponent{
+class MUCLightChatInfoController (private val chatDto: ChatDto): AbstractChatInfoController(chatDto){
 
-    val chatManager = MucChatManager(chatId)
+    override val chatManager = MucChatManager(chatDto)
+    val affiliations: MutableLiveData<List<MucAffiliationViewItem>> = MutableLiveData()
+    val isMeOwner = chatManager.isMeOwner
 
-    val affiliations: LiveData<List<BZMucAffiliation>> = chatManager.affiliations
-    var isMeOwner: LiveData<Boolean> = chatManager.isMeOwner
+    fun loadAffiliations() {
+        chatManager.getIsMeOwner()
+        affiliations.postValue(cookMucAffiliationViewItems(chatManager.loadAffiliations()))
 
-    fun deleteChat() = CoroutineScope(Dispatchers.IO).launch {
-        chatManager.deleteChat()
     }
 
-    fun loadAffiliations() = CoroutineScope(Dispatchers.IO).launch {
-        chatManager.loadAffiliations()
+    fun deleteAffiliation(affiliationDto: MucAffiliationDto){
+        chatManager.deleteAffiliation(affiliationDto)
     }
 
-    fun deleteAffiliation(affiliation: BZMucAffiliation) = CoroutineScope(Dispatchers.IO).launch {
-        chatManager.deleteAffiliation(affiliation)
+    private fun cookMucAffiliationViewItems(list: List<MucAffiliationDto>?): List<MucAffiliationViewItem> {
+        var result = listOf<MucAffiliationViewItem>()
+        if (list.isNullOrEmpty()) return result
+        result = MucAffiliationViewMaker().makeList(list)
+        return result.filter { it.affiliation.affiliationType != MUCLightAffiliation.none }
+            .sortedBy { it.affiliation.affiliationType }
     }
-
 }

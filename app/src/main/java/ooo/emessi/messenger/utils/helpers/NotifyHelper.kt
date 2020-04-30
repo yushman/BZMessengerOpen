@@ -12,11 +12,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.ui.activities.MainActivity
-import ooo.emessi.messenger.ui.activities.MucLightChatActivity
 import ooo.emessi.messenger.ui.activities.NewMainActivity
-import ooo.emessi.messenger.ui.activities.SingleChatActivity
-import ooo.emessi.messenger.utils.isMultiChat
 
 
 class NotifyHelper (val context: Context) {

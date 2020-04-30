@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_menu_contacts"
+            android:icon="@drawable/ic_group_black_24dp"
+            android:title="@string/nav_contacts"/>
+        <item
+            android:id="@+id/nav_menu_chats"
+            android:icon="@drawable/ic_chat_black_24dp"
+            android:title="@string/nav_chats"/>
+        <item
+            android:id="@+id/nav_menu_settings"
+            android:icon="@drawable/ic_settings_black_24dp"
+            android:title="@string/nav_settings"/>
+        <item
+            android:id="@+id/nav_menu_logout"
+            android:icon="@drawable/ic_exit_to_app_black_24dp"
+            android:title="@string/nav_logout"/>
+    </group>
+
+</menu>

@@ -28,8 +28,8 @@
 
             <TextView
                 android:id="@+id/contact_avatar"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
+                android:layout_width="@dimen/avatar_size"
+                android:layout_height="@dimen/avatar_size"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/round_avatar"
                 android:gravity="center"

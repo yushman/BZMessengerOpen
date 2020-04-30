@@ -1,31 +1,19 @@
 package ooo.emessi.messenger.ui.viewmodels
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.ViewModel
 import ooo.emessi.messenger.controllers.MUCLightChatInfoController
-import ooo.emessi.messenger.data.model.bz_model.muc_affiliation.BZMucAffiliation
-import ooo.emessi.messenger.data.repo.ChatRepo
-import org.koin.core.KoinComponent
-import org.koin.core.get
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.dto_model.muc_affiliation.MucAffiliationDto
 
-class MucLightChatInfoActivityViewModel (private val chatId: String) : ViewModel(), KoinComponent{
-    private val chatRepo: ChatRepo = get()
+class MucLightChatInfoActivityViewModel (private val chatDto: ChatDto) : AbstractChatInfoViewModel(chatDto){
+    override val chatInfoController = MUCLightChatInfoController(chatDto)
+    val affiliations = chatInfoController.affiliations
+    val isMeOwner = chatInfoController.isMeOwner
 
-    private val chatInfoController =
-        MUCLightChatInfoController(chatId)
-    val chat = chatRepo.loadChatById(chatId)
-    val affiliations: LiveData<List<BZMucAffiliation>> = chatInfoController.affiliations
-    var isMeOwner: LiveData<Boolean> = chatInfoController.isMeOwner
-
-    fun leaveChat() {
-        chatInfoController.deleteChat()
-    }
-
-    fun loadAffiliations() {
+    fun loadAffiliations(){
         chatInfoController.loadAffiliations()
     }
 
-    fun deleteAffiliation(affiliation: BZMucAffiliation) {
-        chatInfoController.deleteAffiliation(affiliation)
+    fun deleteAffiliation(affiliationDto: MucAffiliationDto) {
+        chatInfoController.deleteAffiliation(affiliationDto)
     }
 }

@@ -1,60 +1,52 @@
 package ooo.emessi.messenger.data.repo
 
-import android.content.Context
 import androidx.lifecycle.LiveData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import ooo.emessi.messenger.data.database.BZDatabase
-import ooo.emessi.messenger.data.model.bz_model.contact.BZContact
+import ooo.emessi.messenger.data.database.ContactDao
+import ooo.emessi.messenger.data.model.dto_model.contact.ContactDto
 
-class ContactRepo (context: Context){
+class ContactRepo(private val dao: ContactDao) {
 
-    private val bzDatabase = BZDatabase.getInstance(context)
-    private val dao = bzDatabase.contactDao()
-
-//    init {
-//        prepopulateDb()
-//    }
-
-    fun saveContact(contact: BZContact) = CoroutineScope(Dispatchers.IO).launch{
-        dao.insertContact(contact)
+    fun saveContact(contactDto: ContactDto) = CoroutineScope(Dispatchers.IO).launch {
+        dao.insertContact(contactDto)
     }
 
-    fun saveContacts(contacts: List<BZContact>) = CoroutineScope(Dispatchers.IO).launch{
-        dao.insertContacts(contacts)
+    fun saveContacts(contactDtos: List<ContactDto>) = CoroutineScope(Dispatchers.IO).launch {
+        dao.insertContacts(contactDtos)
     }
 
-    fun deleteContact(contact: BZContact) = CoroutineScope(Dispatchers.IO).launch{
-        dao.deleteContact(contact)
+    fun deleteContact(contactDto: ContactDto) = CoroutineScope(Dispatchers.IO).launch {
+        dao.deleteContact(contactDto)
     }
 
     fun deleteContactById(jid: String)= CoroutineScope(Dispatchers.IO).launch{
         dao.deleteContactByJid(jid)
     }
 
-    fun loadContacts(): LiveData<List<BZContact>>{
+    fun loadContacts(): LiveData<List<ContactDto>> {
         return dao.selectAllContacts()
     }
 
-    fun getContacts(): List<BZContact> {
-            return dao.selectAllContactsSync()
-    }
-
-
-
-    fun getContactById(jid: String): BZContact?{
+    fun getContactById(jid: String): ContactDto? {
         return dao.selectContactById(jid)
     }
 
+    fun getContacts(): List<ContactDto> = dao.selectAllContactsSync()
+
     fun prepopulateDb() = CoroutineScope(Dispatchers.IO).launch{
-        val list = mutableListOf<BZContact>()
-        list.add(BZContact("i.yushenkov@mossales.ru", "ivan", null))
-        list.add(BZContact("fff@mossales.ru", "fff", null))
-        list.add(BZContact("ddd@mossales.ru", "ddd", null))
-        list.add(BZContact("sss@mossales.ru", "sss", null))
-        list.add(BZContact("test11@conference.mossales.ru", "aaa", null))
+        val list = mutableListOf<ContactDto>()
+        list.add(ContactDto("i.yushenkov@mossales.ru", "ivan", null))
+        list.add(ContactDto("fff@mossales.ru", "fff", null))
+        list.add(ContactDto("ddd@mossales.ru", "ddd", null))
+        list.add(ContactDto("sss@mossales.ru", "sss", null))
+        list.add(ContactDto("test11@conference.mossales.ru", "aaa", null))
         list.forEach { dao.insertContact(it) }
+    }
+
+    fun updateContact(contactDto: ContactDto) {
+        dao.update(contactDto)
     }
 
 }

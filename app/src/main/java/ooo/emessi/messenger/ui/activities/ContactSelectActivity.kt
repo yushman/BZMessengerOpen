@@ -7,19 +7,19 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.miguelcatalan.materialsearchview.MaterialSearchView
 import com.r0adkll.slidr.Slidr
 import ooo.emessi.messenger.R
-import ooo.emessi.messenger.data.model.bz_model.contact.BZContact
+import ooo.emessi.messenger.constants.Constants.KEY_CHAT
+import ooo.emessi.messenger.data.model.dto_model.chat.ChatDto
+import ooo.emessi.messenger.data.model.view_item_model.contact.ContactViewItem
 import ooo.emessi.messenger.ui.adapters.ContactsAdapter
 import ooo.emessi.messenger.ui.viewmodels.ContactSelectActivityViewModel
 
 class ContactSelectActivity : AppCompatActivity() {
-
-    private val TAG = this.javaClass.simpleName
 
     private lateinit var contactsAdapter: ContactsAdapter
     private lateinit var recyclerView: RecyclerView
@@ -47,20 +47,34 @@ class ContactSelectActivity : AppCompatActivity() {
         searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 if (!query.isNullOrEmpty())
-                    contactsAdapter.updateContacts(contactSelectViewModel.contacts.value?.filter{it.nickName.contains(query, true)} ?: listOf())
-                else contactsAdapter.updateContacts(contactSelectViewModel.contacts.value ?: listOf())
+                    contactsAdapter.updateContacts(contactSelectViewModel.contacts.value?.filter {
+                        it.contactDto.name.contains(
+                            query,
+                            true
+                        )
+                    } ?: listOf())
+                else contactsAdapter.updateContacts(
+                    contactSelectViewModel.contacts.value ?: listOf()
+                )
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (!newText.isNullOrEmpty())
-                    contactsAdapter.updateContacts(contactSelectViewModel.contacts.value?.filter{it.nickName.contains(newText, true)} ?: listOf())
-                else contactsAdapter.updateContacts(contactSelectViewModel.contacts.value ?: listOf())
+                    contactsAdapter.updateContacts(contactSelectViewModel.contacts.value?.filter {
+                        it.contactDto.name.contains(
+                            newText,
+                            true
+                        )
+                    } ?: listOf())
+                else contactsAdapter.updateContacts(
+                    contactSelectViewModel.contacts.value ?: listOf()
+                )
                 return true
             }
 
         })
-        searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
+        searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener {
             override fun onSearchViewClosed() {
                 contactsAdapter.updateContacts(contactSelectViewModel.contacts.value ?: listOf())
             }
@@ -80,16 +94,19 @@ class ContactSelectActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (searchView.isSearchOpen){
+        if (searchView.isSearchOpen) {
             searchView.closeSearch()
         } else
             super.onBackPressed()
     }
 
     private fun initViewModels() {
-        contactSelectViewModel = ViewModelProviders.of(this).get(ContactSelectActivityViewModel::class.java)
-        contactSelectViewModel.contacts.observe(this, Observer { contactsAdapter.updateContacts(it) })
-        contactSelectViewModel.loadContacts()
+        contactSelectViewModel =
+            ViewModelProvider(this).get(ContactSelectActivityViewModel::class.java)
+        contactSelectViewModel.contacts.observe(
+            this,
+            Observer { contactsAdapter.updateContacts(it) })
+        contactSelectViewModel.newChat.observe(this, Observer { routeToChatActivity(it) })
     }
 
     private fun initViews() {
@@ -99,21 +116,23 @@ class ContactSelectActivity : AppCompatActivity() {
         title = "Select contact"
         searchView = findViewById(R.id.search_view_contacts)
         val lm = LinearLayoutManager(this)
-        contactsAdapter = ContactsAdapter{routeToChatActivity(it)}
+        contactsAdapter = ContactsAdapter { contactClick(it) }
         recyclerView = findViewById(R.id.rv_contact_select)
         recyclerView.apply {
             layoutManager = lm
             adapter = contactsAdapter
             itemAnimator = null
         }
-
         Slidr.attach(this)
     }
 
-    private fun routeToChatActivity(it: BZContact) {
+    private fun contactClick(contactViewItem: ContactViewItem){
+        contactSelectViewModel.createNewChat(contactViewItem.contactDto)
+    }
+
+    private fun routeToChatActivity(chat: ChatDto) {
         val i = Intent(this, SingleChatActivity::class.java)
-        i.putExtra("JID", it.contactJid)
-        i.putExtra("NEW_FLAG", true)
+        i.putExtra(KEY_CHAT, chat)
         startActivity(i)
         finish()
     }

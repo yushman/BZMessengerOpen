@@ -1,7 +1,7 @@
 package ooo.emessi.messenger.utils.helpers
 
 import android.util.Log
-import ooo.emessi.messenger.data.model.bz_model.message.BZMessage
+import ooo.emessi.messenger.data.model.dto_model.message.MessageDto
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -27,16 +27,16 @@ object LogHelper {
         }
     }
 
-    fun logMessage(tag: String, message: BZMessage): String {
-        val text = """Message from: ${message.from}
-            to: ${message.to}
-            body: ${message.body}
-            correctedBody: ${message.messageCorrectedBody}
-            refferenceId: ${message.messageReplyedId}
-            payloadSize: ${message.payload}
-            payloadType: ${message.payloadType.name}
-            sended: ${message.isSended}
-            delivered: ${message.isDelivered}
+    fun logMessage(tag: String, messageDto: MessageDto): String {
+        val text = """Message from: ${messageDto.from}
+            to: ${messageDto.to}
+            body: ${messageDto.body}
+            correctedBody: ${messageDto.messageCorrectedBody}
+            refferenceId: ${messageDto.messageReplyedId}
+            payloadSize: ${messageDto.payload}
+            payloadType: ${messageDto.payloadType.name}
+            sended: ${messageDto.isSended}
+            delivered: ${messageDto.isDelivered}
         """.trimIndent()
         Log.i(tag, text)
         return text

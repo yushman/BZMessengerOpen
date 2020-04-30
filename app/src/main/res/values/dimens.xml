@@ -17,6 +17,6 @@
     <dimen name="avatar_round_size">112dp</dimen>
     <dimen name="space_maximum_72">72dp</dimen>
 
-    <dimen name="avatar_size">58dp</dimen>
+    <dimen name="avatar_size">50dp</dimen>
     <dimen name="avatar_small_size">32dp</dimen>
 </resources>

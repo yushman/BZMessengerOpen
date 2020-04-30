@@ -7,11 +7,11 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import ooo.emessi.messenger.managers.AccountManager
-import ooo.emessi.messenger.managers.LoginManager
+import ooo.emessi.messenger.managers.account.AccountManager
+import ooo.emessi.messenger.managers.account.LoginManager
 import ooo.emessi.messenger.ssl.SslApi
 import ooo.emessi.messenger.utils.getHost
-import ooo.emessi.messenger.xmpp.XMPPConnectionApi
+import ooo.emessi.messenger.xmpp.XMPPManagersFactory
 import org.koin.core.KoinComponent
 import org.koin.core.get
 
@@ -19,7 +19,8 @@ class LoginActivityViewModel : ViewModel(), KoinComponent{
 
     private val TAG = this.javaClass.simpleName
     private val accountManager: AccountManager = get()
-    private val loginManager = LoginManager()
+    private val loginManager =
+        LoginManager()
     val code: LiveData<String?> = loginManager.code
     val authOk: MutableLiveData<Boolean> = MutableLiveData()
     val httpOk: LiveData<Boolean> = loginManager.httpOk
@@ -37,7 +38,7 @@ class LoginActivityViewModel : ViewModel(), KoinComponent{
     }
 
     private fun connect(): Boolean {
-        val connection = XMPPConnectionApi.getConnection()
+        val connection = XMPPManagersFactory.getXmppConnection()
         try {
             connection.connect()
         } catch (ex: Exception) {
@@ -49,7 +50,7 @@ class LoginActivityViewModel : ViewModel(), KoinComponent{
 
     fun login(user: String, code: String, ssl: SslApi) = CoroutineScope(Dispatchers.IO).launch {
         val (login, password) = loginManager.register(user, code)
-        val connection = XMPPConnectionApi.setupConnection(user.getHost(), login, password) //
+        val connection = XMPPManagersFactory.getXmppConnection() //
         try {
             connection.connect()
             connection.login() //user, password
